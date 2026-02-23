@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   FiFileText, FiUser, FiBookOpen, FiBriefcase, FiAward, 
-  FiMenu, FiX, FiEye 
+  FiMenu, FiX, FiEye, FiMaximize2, FiMinimize2 
 } from 'react-icons/fi'
 import PersonalInfoForm from '@/components/forms/PersonalInfoForm'
 import EducationForm from '@/components/forms/EducationForm'
@@ -15,6 +15,7 @@ import ProjectsForm from '@/components/forms/ProjectsForm'
 import CertificationsForm from '@/components/forms/CertificationsForm'
 import JobDescriptionForm from '@/components/forms/JobDescriptionForm'
 import UserAvatar from '@/components/UserAvatar'
+import ResumePreview from '@/components/ResumePreview'
 import useResumeStore from '@/store/resumeStore'
 
 export default function Dashboard() {
@@ -22,6 +23,8 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('personal')
   const [user, setUser] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [showPreview, setShowPreview] = useState(true)
+  const [previewFullscreen, setPreviewFullscreen] = useState(false)
   const { personalInfo, education, workExperience, skills, projects, jobDescription } = useResumeStore()
 
   useEffect(() => {
@@ -99,6 +102,12 @@ export default function Dashboard() {
                 <FiEye className="h-4 w-4" />
                 <span className="hidden sm:inline">Preview</span>
               </button>
+              <button
+                onClick={() => setShowPreview(!showPreview)}
+                className="lg:hidden flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                {showPreview ? <FiX className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
+              </button>
               <UserAvatar user={user} onLogout={handleLogout} />
             </div>
           </div>
@@ -175,54 +184,92 @@ export default function Dashboard() {
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-6 max-w-5xl">
-          {activeTab === 'personal' && <PersonalInfoForm />}
-          {activeTab === 'education' && <EducationForm />}
-          {activeTab === 'experience' && <WorkExperienceForm />}
-          {activeTab === 'skills' && <SkillsForm />}
-          {activeTab === 'projects' && <ProjectsForm />}
-          {activeTab === 'certifications' && <CertificationsForm />}
-          {activeTab === 'job' && <JobDescriptionForm />}
+        {/* Main Content Area with Split View */}
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+          {/* Form Section */}
+          <main className={`flex-1 p-4 lg:p-6 overflow-y-auto ${previewFullscreen ? 'hidden lg:block' : ''}`}>
+            {activeTab === 'personal' && <PersonalInfoForm />}
+            {activeTab === 'education' && <EducationForm />}
+            {activeTab === 'experience' && <WorkExperienceForm />}
+            {activeTab === 'skills' && <SkillsForm />}
+            {activeTab === 'projects' && <ProjectsForm />}
+            {activeTab === 'certifications' && <CertificationsForm />}
+            {activeTab === 'job' && <JobDescriptionForm />}
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-6">
-            <button
-              onClick={() => {
-                const currentIndex = tabs.findIndex(tab => tab.id === activeTab)
-                if (currentIndex > 0) {
-                  setActiveTab(tabs[currentIndex - 1].id)
-                }
-              }}
-              disabled={activeTab === tabs[0].id}
-              className="px-5 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            
-            {activeTab === tabs[tabs.length - 1].id ? (
-              <button
-                onClick={handleGenerateResume}
-                disabled={!isFormComplete()}
-                className="px-5 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-              >
-                Generate Resume
-              </button>
-            ) : (
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-6">
               <button
                 onClick={() => {
                   const currentIndex = tabs.findIndex(tab => tab.id === activeTab)
-                  if (currentIndex < tabs.length - 1) {
-                    setActiveTab(tabs[currentIndex + 1].id)
+                  if (currentIndex > 0) {
+                    setActiveTab(tabs[currentIndex - 1].id)
                   }
                 }}
-                className="px-5 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+                disabled={activeTab === tabs[0].id}
+                className="px-5 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Next
+                Previous
               </button>
-            )}
-          </div>
-        </main>
+              
+              {activeTab === tabs[tabs.length - 1].id ? (
+                <button
+                  onClick={handleGenerateResume}
+                  disabled={!isFormComplete()}
+                  className="px-5 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  Generate Resume
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    const currentIndex = tabs.findIndex(tab => tab.id === activeTab)
+                    if (currentIndex < tabs.length - 1) {
+                      setActiveTab(tabs[currentIndex + 1].id)
+                    }
+                  }}
+                  className="px-5 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+                >
+                  Next
+                </button>
+              )}
+            </div>
+          </main>
+
+          {/* Live Preview Panel */}
+          {showPreview && (
+            <aside className={`
+              ${previewFullscreen ? 'w-full' : 'hidden lg:block lg:w-96 xl:w-[450px]'}
+              bg-gray-100 border-l border-gray-300 flex flex-col
+            `}>
+              <div className="p-3 bg-white border-b border-gray-300 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FiEye className="h-4 w-4 text-primary-600" />
+                  <h3 className="text-sm font-semibold text-gray-900">Live Preview</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPreviewFullscreen(!previewFullscreen)}
+                    className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    title={previewFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                  >
+                    {previewFullscreen ? <FiMinimize2 className="h-4 w-4" /> : <FiMaximize2 className="h-4 w-4" />}
+                  </button>
+                  <button
+                    onClick={() => setShowPreview(false)}
+                    className="lg:hidden p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                  >
+                    <FiX className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="transform scale-75 origin-top w-[133%]">
+                  <ResumePreview />
+                </div>
+              </div>
+            </aside>
+          )}
+        </div>
       </div>
 
       {/* Overlay for mobile sidebar */}
