@@ -6,19 +6,31 @@ import Testimonials from '@/components/Testimonials'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-slate-900 flex flex-col">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="bg-white/90 dark:bg-gray-900/90 backdrop-blur shadow-sm border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-14 items-center">
             <div className="flex items-center">
               <FiFileText className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-2xl font-bold text-gray-900">JD2CV</span>
+              <span className="ml-2 text-2xl font-bold text-gray-900 dark:text-gray-100">JD2CV</span>
             </div>
             <div className="flex gap-4">
               <Link
+                href="/dashboard"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 transition-colors font-medium"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/profile"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 transition-colors font-medium"
+              >
+                Profile
+              </Link>
+              <Link
                 href="/login"
-                className="px-4 py-2 text-gray-700 hover:text-primary-600 transition-colors font-medium"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 transition-colors font-medium"
               >
                 Login
               </Link>
@@ -35,7 +47,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
           <div className="text-center">
             <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-semibold mb-4">
               <FiCheckCircle className="h-4 w-4 mr-2" />
@@ -79,7 +91,7 @@ export default function Home() {
                 className="inline-flex items-center justify-center px-8 py-3.5 bg-primary-600 text-white rounded-lg text-base font-bold hover:bg-primary-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 <FiFileText className="h-5 w-5 mr-2" />
-                Create My Resume - It's Free
+                Create My Resume - It&apos;s Free
               </Link>
               <Link
                 href="/login"
@@ -180,7 +192,7 @@ export default function Home() {
 
         {/* How It Works Section */}
         <div className="bg-gradient-to-br from-gray-50 to-blue-50 py-12 mt-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
               <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                Build Your Resume in 3 Simple Steps
@@ -220,7 +232,7 @@ export default function Home() {
 
         {/* Stats Section */}
         <div className="py-12 bg-gradient-to-r from-primary-600 to-purple-600 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
               <div>
                 <div className="text-4xl md:text-5xl font-bold mb-2">10,000+</div>
@@ -259,7 +271,7 @@ export default function Home() {
               className="inline-flex items-center px-8 py-3.5 bg-white text-primary-600 rounded-lg font-bold hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl text-base"
             >
               <FiFileText className="h-5 w-5 mr-2" />
-              Get Started - It's Free Forever
+              Get Started - It&apos;s Free Forever
             </Link>
             <p className="mt-4 text-sm text-primary-200">No credit card required · Cancel anytime · Export as PDF</p>
           </div>

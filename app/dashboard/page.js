@@ -1,309 +1,183 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { 
-  FiFileText, FiUser, FiBookOpen, FiBriefcase, FiAward, 
-  FiMenu, FiX, FiEye, FiMaximize2, FiMinimize2, FiMoon, FiSun 
-} from 'react-icons/fi'
-import PersonalInfoForm from '@/components/forms/PersonalInfoForm'
-import EducationForm from '@/components/forms/EducationForm'
-import WorkExperienceForm from '@/components/forms/WorkExperienceForm'
-import SkillsForm from '@/components/forms/SkillsForm'
-import ProjectsForm from '@/components/forms/ProjectsForm'
-import CertificationsForm from '@/components/forms/CertificationsForm'
-import JobDescriptionForm from '@/components/forms/JobDescriptionForm'
+import { FiBarChart2, FiBriefcase, FiCheckCircle, FiChevronLeft, FiChevronRight, FiFilter, FiPieChart, FiSearch, FiTarget } from 'react-icons/fi'
 import UserAvatar from '@/components/UserAvatar'
-import ResumePreview from '@/components/ResumePreview'
-import useResumeStore from '@/store/resumeStore'
 
-export default function Dashboard() {
+const sampleApplications = [
+  { id: 1, company: 'Google', role: 'Frontend Engineer', stage: 'interview', appliedDate: '2026-03-18', location: 'Remote', salary: '$140k', source: 'LinkedIn', notes: 'Phone screen scheduled' },
+  { id: 2, company: 'Amazon', role: 'Software Engineer', stage: 'applied', appliedDate: '2026-03-17', location: 'Bangalore', salary: '$125k', source: 'Company site', notes: 'Resume tailored to JD' },
+  { id: 3, company: 'Meta', role: 'Product Engineer', stage: 'short listed', appliedDate: '2026-03-16', location: 'Remote', salary: '$150k', source: 'Referral', notes: 'Recruiter reached out' },
+  { id: 4, company: 'Stripe', role: 'Web Engineer', stage: 'rejected', appliedDate: '2026-03-14', location: 'Remote', salary: '$145k', source: 'LinkedIn', notes: 'No response after OA' },
+  { id: 5, company: 'Microsoft', role: 'Full Stack Engineer', stage: 'applied', appliedDate: '2026-03-13', location: 'Hyderabad', salary: '$132k', source: 'Indeed', notes: 'Awaiting review' },
+  { id: 6, company: 'HubSpot', role: 'UI Engineer', stage: 'short listed', appliedDate: '2026-03-12', location: 'Remote', salary: '$128k', source: 'Company site', notes: 'Portfolio reviewed' },
+]
+
+const stageLabels = ['short listed', 'applied', 'interview', 'rejected']
+
+export default function DashboardPage() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState('personal')
   const [user, setUser] = useState(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [showPreview, setShowPreview] = useState(true)
-  const [previewFullscreen, setPreviewFullscreen] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
-  const { personalInfo, education, workExperience, skills, projects, jobDescription } = useResumeStore()
+  const [query, setQuery] = useState('')
+  const [stage, setStage] = useState('all')
+  const [page, setPage] = useState(1)
+  const pageSize = 3
 
   useEffect(() => {
-    // Check authentication
     const userData = localStorage.getItem('user')
-    if (!userData) {
-      router.push('/login')
-    } else {
-      setUser(JSON.parse(userData))
-    }
-    
-    // Load dark mode preference
-    const savedDarkMode = localStorage.getItem('darkMode')
-    if (savedDarkMode !== null) {
-      setDarkMode(JSON.parse(savedDarkMode))
-    }
+    if (!userData) router.push('/login')
+    else setUser(JSON.parse(userData))
   }, [router])
 
-  useEffect(() => {
-    // Apply dark mode class to document
-    if (darkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-    // Save preference
-    localStorage.setItem('darkMode', JSON.stringify(darkMode))
-  }, [darkMode])
+  const filtered = useMemo(() => sampleApplications.filter((item) => {
+    const matchesQuery = `${item.company} ${item.role} ${item.location}`.toLowerCase().includes(query.toLowerCase())
+    const matchesStage = stage === 'all' || item.stage === stage
+    return matchesQuery && matchesStage
+  }), [query, stage])
 
-  const handleLogout = () => {
-    localStorage.removeItem('user')
-    router.push('/')
-  }
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const visibleRows = filtered.slice((page - 1) * pageSize, page * pageSize)
 
-  const handleGenerateResume = () => {
-    router.push('/resume')
-  }
+  const counts = stageLabels.reduce((acc, key) => ({ ...acc, [key]: sampleApplications.filter((a) => a.stage === key).length }), {})
+  const total = sampleApplications.length
+  const interviewRate = Math.round((counts.interview / total) * 100)
 
-  const isFormComplete = () => {
-    return (
-      personalInfo.fullName &&
-      personalInfo.email &&
-      education.length > 0 &&
-      workExperience.length > 0 &&
-      skills.technical.length > 0
-    )
-  }
-
-  const tabs = [
-    { id: 'personal', name: 'Personal Info', icon: FiUser },
-    { id: 'education', name: 'Education', icon: FiBookOpen },
-    { id: 'experience', name: 'Experience', icon: FiBriefcase },
-    { id: 'skills', name: 'Skills', icon: FiAward },
-    { id: 'projects', name: 'Projects', icon: FiFileText },
-    { id: 'certifications', name: 'Certifications', icon: FiAward },
-    { id: 'job', name: 'Job Description', icon: FiFileText },
-  ]
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
+  if (!user) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" /></div>
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      {/* Top Navigation */}
-      <nav className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b fixed w-full z-10 shadow-sm`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-14 items-center">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className={`lg:hidden p-2 rounded-md ${darkMode ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-500 hover:bg-gray-100'}`}
-              >
-                {sidebarOpen ? <FiX className="h-5 w-5" /> : <FiMenu className="h-5 w-5" />}
-              </button>
-              <Link href="/dashboard" className="flex items-center">
-                <FiFileText className="h-7 w-7 text-primary-600" />
-                <span className={`ml-2 text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>JD2CV</span>
-              </Link>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleGenerateResume}
-                disabled={!isFormComplete()}
-                className="flex items-center gap-2 px-3 py-1.5 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-              >
-                <FiEye className="h-4 w-4" />
-                <span className="hidden sm:inline">Preview</span>
-              </button>
-              <button
-                onClick={() => setShowPreview(!showPreview)}
-                className={`lg:hidden flex items-center gap-2 px-3 py-1.5 ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} text-sm rounded-lg transition-colors`}
-              >
-                {showPreview ? <FiX className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
-              </button>
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} transition-colors`}
-                title={darkMode ? 'Light mode' : 'Dark mode'}
-              >
-                {darkMode ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
-              </button>
-              <UserAvatar user={user} onLogout={handleLogout} />
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+      <header className="border-b bg-white/90 backdrop-blur sticky top-0 z-10">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500">Welcome back</p>
+            <h1 className="text-xl font-bold text-gray-900">{user.name || user.email}</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <UserAvatar user={user} onLogout={() => { localStorage.removeItem('user'); router.push('/') }} />
           </div>
         </div>
-      </nav>
+      </header>
 
-      <div className="flex pt-14 h-screen">
-        {/* Sidebar */}
-        <aside className={`
-          fixed lg:static inset-y-0 left-0 z-20 w-60 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r pt-14 lg:pt-0
-          transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
-          transition-transform duration-300 ease-in-out overflow-y-auto
-        `}>
-          <nav className="px-3 py-4 space-y-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id)
-                    setSidebarOpen(false)
-                  }}
-                  className={`
-                    w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors text-sm
-                    ${activeTab === tab.id 
-                      ? 'bg-primary-50 text-primary-700 font-semibold' 
-                      : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'
-                    }
-                  `}
-                >
-                  <Icon className="h-4 w-4" />
-                  {tab.name}
-                </button>
-              )
-            })}
-          </nav>
+      <main className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <StatCard title="Total Applications" value={total} icon={FiBriefcase} />
+          <StatCard title="Short Listed" value={counts['short listed']} icon={FiCheckCircle} />
+          <StatCard title="Interviews" value={counts.interview} icon={FiTarget} />
+          <StatCard title="Interview Rate" value={`${interviewRate}%`} icon={FiBarChart2} />
+        </section>
 
-          {/* Progress Indicator */}
-          <div className={`px-3 py-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} mt-2`}>
-            <h3 className={`text-xs font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2 uppercase tracking-wide`}>Progress</h3>
-            <div className="space-y-1.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Personal Info</span>
-                <span className={personalInfo.fullName ? 'text-green-600' : 'text-gray-400'}>
-                  {personalInfo.fullName ? '✓' : '○'}
-                </span>
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Application Funnel</h2>
+                <p className="text-sm text-gray-500">Stage distribution across your job search</p>
               </div>
-              <div className="flex items-center justify-between">
-                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Education</span>
-                <span className={education.length > 0 ? 'text-green-600' : 'text-gray-400'}>
-                  {education.length > 0 ? '✓' : '○'}
-                </span>
+              <FiPieChart className="h-5 w-5 text-primary-600" />
+            </div>
+            <div className="space-y-4">
+              {stageLabels.map((label) => (
+                <div key={label}>
+                  <div className="flex items-center justify-between text-sm mb-1">
+                    <span className="font-medium text-gray-700 capitalize">{label}</span>
+                    <span className="text-gray-500">{counts[label]}</span>
+                  </div>
+                  <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary-500 to-cyan-500 rounded-full" style={{ width: `${total ? (counts[label] / total) * 100 : 0}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Stage Snapshot</h2>
+            <div className="space-y-3">
+              {stageLabels.map((label) => (
+                <div key={label} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                  <span className="text-sm font-medium text-gray-700 capitalize">{label}</span>
+                  <span className="text-sm font-bold text-gray-900">{counts[label]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Filtered Applications</h2>
+              <p className="text-sm text-gray-500">Paginated records for the current search</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1) }} className="pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm w-full sm:w-64" placeholder="Search company, role, location" />
               </div>
-              <div className="flex items-center justify-between">
-                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Experience</span>
-                <span className={workExperience.length > 0 ? 'text-green-600' : 'text-gray-400'}>
-                  {workExperience.length > 0 ? '✓' : '○'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Skills</span>
-                <span className={skills.technical.length > 0 ? 'text-green-600' : 'text-gray-400'}>
-                  {skills.technical.length > 0 ? '✓' : '○'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Projects</span>
-                <span className={projects.length > 0 ? 'text-green-600' : 'text-gray-400'}>
-                  {projects.length > 0 ? '✓' : '○'}
-                </span>
+              <div className="relative">
+                <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <select value={stage} onChange={(e) => { setStage(e.target.value); setPage(1) }} className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white">
+                  <option value="all">All stages</option>
+                  {stageLabels.map((label) => <option key={label} value={label}>{label}</option>)}
+                </select>
               </div>
             </div>
           </div>
-        </aside>
 
-        {/* Main Content Area with Split View */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          {/* Form Section */}
-          <main className={`flex-1 p-4 lg:p-6 overflow-y-auto ${previewFullscreen ? 'hidden lg:block' : ''}`}>
-            {activeTab === 'personal' && <PersonalInfoForm />}
-            {activeTab === 'education' && <EducationForm />}
-            {activeTab === 'experience' && <WorkExperienceForm />}
-            {activeTab === 'skills' && <SkillsForm />}
-            {activeTab === 'projects' && <ProjectsForm />}
-            {activeTab === 'certifications' && <CertificationsForm />}
-            {activeTab === 'job' && <JobDescriptionForm />}
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500 border-b">
+                  <th className="py-3 pr-4">Company</th>
+                  <th className="py-3 pr-4">Role</th>
+                  <th className="py-3 pr-4">Stage</th>
+                  <th className="py-3 pr-4">Applied</th>
+                  <th className="py-3 pr-4">Location</th>
+                  <th className="py-3 pr-4">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleRows.map((row) => (
+                  <tr key={row.id} className="border-b last:border-0">
+                    <td className="py-4 pr-4 font-medium text-gray-900">{row.company}</td>
+                    <td className="py-4 pr-4 text-gray-700">{row.role}</td>
+                    <td className="py-4 pr-4"><span className="px-2.5 py-1 rounded-full bg-primary-50 text-primary-700 capitalize">{row.stage}</span></td>
+                    <td className="py-4 pr-4 text-gray-600">{row.appliedDate}</td>
+                    <td className="py-4 pr-4 text-gray-600">{row.location}</td>
+                    <td className="py-4 pr-4 text-gray-600 max-w-xs">{row.notes}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-6">
-              <button
-                onClick={() => {
-                  const currentIndex = tabs.findIndex(tab => tab.id === activeTab)
-                  if (currentIndex > 0) {
-                    setActiveTab(tabs[currentIndex - 1].id)
-                  }
-                }}
-                disabled={activeTab === tabs[0].id}
-                className={`px-5 py-2 text-sm border ${darkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
-              >
-                Previous
-              </button>
-              
-              {activeTab === tabs[tabs.length - 1].id ? (
-                <button
-                  onClick={handleGenerateResume}
-                  disabled={!isFormComplete()}
-                  className="px-5 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                >
-                  Generate Resume
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    const currentIndex = tabs.findIndex(tab => tab.id === activeTab)
-                    if (currentIndex < tabs.length - 1) {
-                      setActiveTab(tabs[currentIndex + 1].id)
-                    }
-                  }}
-                  className="px-5 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
-                >
-                  Next
-                </button>
-              )}
+          <div className="flex items-center justify-between mt-5">
+            <p className="text-sm text-gray-500">Showing {visibleRows.length} of {filtered.length} filtered results</p>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="p-2 border rounded-lg disabled:opacity-40"><FiChevronLeft /></button>
+              <span className="text-sm text-gray-600">Page {page} of {pageCount}</span>
+              <button onClick={() => setPage((p) => Math.min(pageCount, p + 1))} disabled={page === pageCount} className="p-2 border rounded-lg disabled:opacity-40"><FiChevronRight /></button>
             </div>
-          </main>
+          </div>
+        </section>
+      </main>
+    </div>
+  )
+}
 
-          {/* Live Preview Panel */}
-          {showPreview && (
-            <aside className={`
-              ${previewFullscreen ? 'w-full' : 'hidden lg:block lg:w-96 xl:w-[450px]'}
-              ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-300'} border-l flex flex-col
-            `}>
-              <div className={`p-3 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'} border-b flex items-center justify-between`}>
-                <div className="flex items-center gap-2">
-                  <FiEye className="h-4 w-4 text-primary-600" />
-                  <h3 className={`text-sm font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Live Preview</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setPreviewFullscreen(!previewFullscreen)}
-                    className={`p-1.5 ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'} rounded transition-colors`}
-                    title={previewFullscreen ? "Exit fullscreen" : "Fullscreen"}
-                  >
-                    {previewFullscreen ? <FiMinimize2 className="h-4 w-4" /> : <FiMaximize2 className="h-4 w-4" />}
-                  </button>
-                  <button
-                    onClick={() => setShowPreview(false)}
-                    className={`lg:hidden p-1.5 ${darkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'} rounded transition-colors`}
-                  >
-                    <FiX className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4">
-                <div className="transform scale-75 origin-top w-[133%]">
-                  <ResumePreview />
-                </div>
-              </div>
-            </aside>
-          )}
+function StatCard({ title, value, icon: Icon }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-500">{title}</p>
+          <h3 className="mt-1 text-2xl font-bold text-gray-900">{value}</h3>
+        </div>
+        <div className="p-3 rounded-xl bg-primary-50 text-primary-600">
+          <Icon className="h-5 w-5" />
         </div>
       </div>
-
-      {/* Overlay for mobile sidebar */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-10 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
     </div>
   )
 }

@@ -56,7 +56,7 @@ export default function Testimonials() {
 
   return (
     <section className="py-12 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             Join 10,000+ Job Seekers Who Got Hired
@@ -79,7 +79,7 @@ export default function Testimonials() {
 
               {/* Testimonial Text */}
               <p className="text-gray-700 text-sm mb-4 leading-relaxed">
-                "{testimonial.text}"
+                &ldquo;{testimonial.text}&rdquo;
               </p>
 
               {/* User Info */}

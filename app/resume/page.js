@@ -116,7 +116,7 @@ export default function ResumePage() {
     <div className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-14 items-center">
             <div className="flex items-center gap-3">
               <Link href="/dashboard" className="flex items-center gap-2 text-gray-700 hover:text-gray-900 text-sm">
@@ -135,7 +135,7 @@ export default function ResumePage() {
               </button>
               
               <Link
-                href="/dashboard"
+                href="/resume-builder"
                 className="flex items-center gap-2 px-3 py-1.5 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors shadow-sm"
               >
                 <FiEdit3 className="h-4 w-4" />
@@ -160,7 +160,7 @@ export default function ResumePage() {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Your Resume Preview</h1>
           <p className="text-gray-600">

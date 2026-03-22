@@ -1,5 +1,34 @@
 # JD2CV - Complete Frontend Module
 
+## Current Product Direction
+
+The application is now being shaped as a resume-driven job search automation platform. Users provide personal details, education, work experience, and skills once, then the app helps tailor resumes to job descriptions and track the application process.
+
+### Core Flow
+- Login lands on the dashboard.
+- Dashboard shows application progress immediately.
+- User profile stores personal details only.
+- Job applications are tracked separately from the profile.
+- Users can create, edit, and delete job applications.
+
+### Application Tracking
+Tracked stages:
+- `short listed`
+- `applied`
+- `rejected`
+- `interview`
+
+Each job record may include company, role, stage, applied date, interview date, location, salary, source link, notes, and other useful fields.
+
+### Dashboard Requirements
+- Charts for application activity and stage distribution.
+- Data summaries for progress visibility.
+- Paginated table for filtered job applications.
+- Existing visual design should be reused for now.
+
+### Backend Direction
+Backend support is required, but design and UI changes come first.
+
 ## ✅ Project Status: READY FOR USE
 
 The frontend module is **100% complete** and ready to use. All components, pages, and features are implemented and tested.

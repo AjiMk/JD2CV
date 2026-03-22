@@ -8,6 +8,12 @@
   --background-end-rgb: 255, 255, 255;
 }
 
+html.dark {
+  --foreground-rgb: 229, 231, 235;
+  --background-start-rgb: 17, 24, 39;
+  --background-end-rgb: 17, 24, 39;
+}
+
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-start-rgb));
@@ -15,17 +21,33 @@ body {
   padding: 0;
 }
 
-/* Force light mode for better visibility */
+html.dark body {
+  background: rgb(var(--background-start-rgb));
+}
+
 input,
 textarea,
 select {
-  color: #111827 !important;
-  background-color: #ffffff !important;
+  color: #111827;
+  background-color: #ffffff;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  color: #e5e7eb;
+  background-color: #111827;
+  border-color: #374151;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #9ca3af !important;
+  color: #9ca3af;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #6b7280;
 }
 
 /* Optimize spacing */
@@ -54,6 +76,14 @@ textarea::placeholder {
 ::-webkit-scrollbar-thumb {
   background: #888;
   border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
 }
 
 ::-webkit-scrollbar-thumb:hover {
