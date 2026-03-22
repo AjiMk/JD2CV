@@ -1,3 +1,8 @@
+import { jsonOk } from "@/lib/server/api-response";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
 export async function POST() {
-  return Response.json({ error: 'Not implemented yet' }, { status: 501 })
+  const supabase = createSupabaseServerClient();
+  await supabase.auth.signOut();
+  return jsonOk({ success: true });
 }
