@@ -11,6 +11,7 @@ import {
   FiEye,
   FiEyeOff,
 } from "react-icons/fi";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function Register() {
   const router = useRouter();
@@ -49,20 +50,26 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: { name: formData.name },
+        },
       });
 
-      const data = await response.json();
+      if (error) {
+        throw new Error(error.message || "Unable to register");
+      }
 
-      if (!response.ok) {
-        throw new Error(data.error || "Unable to register");
+      const syncResponse = await fetch("/api/auth/sync", {
+        method: "POST",
+      });
+
+      if (!syncResponse.ok) {
+        const syncData = await syncResponse.json().catch(() => ({}));
+        throw new Error(syncData.error || "Unable to sync user");
       }
 
       router.push("/dashboard");
