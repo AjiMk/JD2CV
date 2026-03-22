@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { jsonError, jsonOk } from "@/lib/server/api-response";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isValidEmail } from "@/lib/utils";

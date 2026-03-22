@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { jsonError, jsonOk } from "@/lib/server/api-response";
 import { prisma } from "@/lib/server/db";
 import { getSupabaseUser } from "@/lib/supabase/server";

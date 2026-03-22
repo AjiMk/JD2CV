@@ -9,6 +9,7 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "test": "vitest run",
+    "postinstall": "prisma generate",
     "prepare": "husky"
   },
   "dependencies": {
