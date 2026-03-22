@@ -8,8 +8,14 @@ export async function GET() {
   const authUser = await getSupabaseUser();
   if (!authUser) return jsonError("Unauthorized", 401);
 
+  const user = await prisma.user.findUnique({
+    where: { providerAccountId: authUser.id },
+  });
+
+  if (!user) return jsonError("Unauthorized", 401);
+
   const profile = await prisma.profile.findUnique({
-    where: { user: { providerAccountId: authUser.id } },
+    where: { userId: user.id },
     include: { country: true, state: true },
   });
 

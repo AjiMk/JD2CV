@@ -40,7 +40,7 @@ model User {
   email             String               @unique
   passwordHash      String?
   authProvider      AuthProvider         @default(credentials)
-  providerAccountId String?
+  providerAccountId String?              @unique
   emailVerifiedAt   DateTime?
   lastLoginAt       DateTime?
   createdAt         DateTime             @default(now())
