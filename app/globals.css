@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 255, 255, 255;
+}
+
+html.dark {
+  --foreground-rgb: 229, 231, 235;
+  --background-start-rgb: 17, 24, 39;
+  --background-end-rgb: 17, 24, 39;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-start-rgb));
+  margin: 0;
+  padding: 0;
+}
+
+html.dark body {
+  background: rgb(var(--background-start-rgb));
+}
+
+input,
+textarea,
+select {
+  color: #111827;
+  background-color: #ffffff;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  color: #e5e7eb;
+  background-color: #111827;
+  border-color: #374151;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #6b7280;
+}
+
+/* Optimize spacing */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
