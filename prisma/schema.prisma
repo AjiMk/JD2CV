@@ -1,0 +1,375 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ApplicationStage {
+  shortListed
+  applied
+  rejected
+  interview
+}
+
+enum ResumeSectionType {
+  personal
+  education
+  skills
+  projects
+  certifications
+}
+
+enum ResumeStatus {
+  draft
+  complete
+}
+
+enum AuthProvider {
+  credentials
+  google
+  github
+  microsoft
+  linkedin
+}
+
+model User {
+  id                String                 @id @default(cuid())
+  name              String?
+  email             String                 @unique
+  passwordHash      String?
+  authProvider      AuthProvider           @default(credentials)
+  providerAccountId String?
+  emailVerifiedAt   DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  profile           Profile?
+  resumes           Resume[]
+  applications      JobApplication[]
+  skills            UserSkill[]
+  education         EducationEntry[]
+  experience        WorkExperienceEntry[]
+  projects          ProjectEntry[]
+  certifications    CertificationEntry[]
+  loginAttempts     LoginAttempt[]
+  passwordResets    PasswordResetToken[]
+}
+
+model Country {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  states      State[]
+  profiles    Profile[]
+  education   EducationEntry[]
+  experiences WorkExperienceEntry[]
+  applications JobApplication[]
+}
+
+model State {
+  id          String   @id @default(cuid())
+  countryId   String
+  name        String
+  code        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  country     Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  profiles    Profile[]
+  education   EducationEntry[]
+  experiences WorkExperienceEntry[]
+  applications JobApplication[]
+
+  @@unique([countryId, name])
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  phone       String?
+  countryId   String?
+  stateId     String?
+  pincode     String?
+  linkedin    String?
+  github      String?
+  portfolio   String?
+  summary     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country     Country? @relation(fields: [countryId], references: [id])
+  state       State?   @relation(fields: [stateId], references: [id])
+}
+
+model Template {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  version     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  resumes     Resume[]
+}
+
+model Resume {
+  id          String          @id @default(cuid())
+  userId      String          @unique
+  title       String?
+  status      ResumeStatus    @default(draft)
+  templateId  String?
+  summary     String?
+  jobTitle    String?
+  targetRole  String?
+  atsScore    Float?
+  generatedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template    Template?       @relation(fields: [templateId], references: [id])
+  sections    ResumeSection[]
+  exported    ResumeExport[]
+}
+
+model ResumeSection {
+  id          String            @id @default(cuid())
+  resumeId    String
+  type        ResumeSectionType
+  title       String
+  sortOrder   Int               @default(0)
+  content     Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  resume      Resume            @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId, type])
+  @@index([resumeId, sortOrder])
+}
+
+model ResumeExport {
+  id          String      @id @default(cuid())
+  resumeId    String
+  fileName    String?
+  filePath    String?
+  format      String      @default("pdf")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  resume      Resume      @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  category    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  userSkills  UserSkill[]
+  projectSkills ProjectSkill[]
+}
+
+model UserSkill {
+  id          String   @id @default(cuid())
+  userId      String
+  skillId     String
+  category    String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@index([userId, category])
+  @@index([skillId])
+  @@unique([userId, skillId, category])
+}
+
+model EducationEntry {
+  id             String   @id @default(cuid())
+  userId         String
+  institution    String
+  degree         String
+  field          String?
+  educationLevel String?
+  startDate      String?
+  endDate        String?
+  gpa            String?
+  countryId      String?
+  stateId        String?
+  pincode        String?
+  achievements   String?
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country        Country? @relation(fields: [countryId], references: [id])
+  state          State?   @relation(fields: [stateId], references: [id])
+
+  @@index([userId, sortOrder])
+}
+
+model WorkExperienceEntry {
+  id           String   @id @default(cuid())
+  userId       String
+  company      String
+  position     String
+  countryId    String?
+  stateId      String?
+  pincode      String?
+  startDate    String?
+  endDate      String?
+  current      Boolean  @default(false)
+  achievements String?
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country      Country? @relation(fields: [countryId], references: [id])
+  state        State?   @relation(fields: [stateId], references: [id])
+
+  @@index([userId, sortOrder])
+}
+
+model ProjectEntry {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  description  String?
+  link         String?
+  highlights   String?
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectSkills ProjectSkill[]
+
+  @@index([userId, sortOrder])
+}
+
+model ProjectSkill {
+  id          String   @id @default(cuid())
+  projectId   String
+  skillId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     ProjectEntry @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skill       Skill        @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, skillId])
+}
+
+model CertificationEntry {
+  id            String   @id @default(cuid())
+  userId        String
+  name          String
+  issuer        String
+  date          String?
+  credentialId  String?
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sortOrder])
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  website     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applications JobApplication[]
+}
+
+model JobApplication {
+  id                String            @id @default(cuid())
+  userId            String
+  companyId         String?
+  manualCompanyName String?
+  role              String
+  stage             ApplicationStage  @default(applied)
+  appliedDate       DateTime?
+  interviewDate     DateTime?
+  countryId         String?
+  stateId           String?
+  pincode           String?
+  salary            String?
+  source            String?
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company           Company?          @relation(fields: [companyId], references: [id])
+  country           Country?          @relation(fields: [countryId], references: [id])
+  state             State?            @relation(fields: [stateId], references: [id])
+  stageHistory      ApplicationStageEvent[]
+
+  @@index([userId, stage])
+  @@index([userId, appliedDate])
+}
+
+model ApplicationStageEvent {
+  id                String            @id @default(cuid())
+  jobApplicationId  String
+  stage             ApplicationStage
+  note              String?
+  occurredAt        DateTime          @default(now())
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  jobApplication    JobApplication    @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
+
+  @@index([jobApplicationId, stage])
+}
+
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  userId      String?
+  email       String?
+  ipAddress   String?
+  success     Boolean  @default(false)
+  reason      String?
+  attemptedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email, attemptedAt])
+  @@index([userId, attemptedAt])
+}
+
+model PasswordResetToken {
+  id          String   @id @default(cuid())
+  userId      String
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
