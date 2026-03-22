@@ -152,6 +152,7 @@ model ResumeSection {
 
   resume      Resume            @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
+  @@unique([resumeId, type])
   @@index([resumeId, type])
   @@index([resumeId, sortOrder])
 }
