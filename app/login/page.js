@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FiFileText, FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function Login() {
   const router = useRouter();
@@ -29,14 +28,21 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
       });
 
-      if (error) {
-        throw new Error(error.message || "Unable to sign in");
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to sign in");
       }
 
       const syncResponse = await fetch("/api/auth/sync", {
