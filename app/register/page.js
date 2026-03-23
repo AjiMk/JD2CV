@@ -11,7 +11,6 @@ import {
   FiEye,
   FiEyeOff,
 } from "react-icons/fi";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function Register() {
   const router = useRouter();
@@ -50,17 +49,22 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: { name: formData.name },
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
       });
 
-      if (error) {
-        throw new Error(error.message || "Unable to register");
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to register");
       }
 
       const syncResponse = await fetch("/api/auth/sync", {
