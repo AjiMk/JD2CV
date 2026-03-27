@@ -28,6 +28,7 @@ enum ResumeStatus {
 
 enum AuthProvider {
   credentials
+  supabase
   google
   github
   microsoft
@@ -40,7 +41,7 @@ model User {
   email             String               @unique
   passwordHash      String?
   authProvider      AuthProvider         @default(credentials)
-  providerAccountId String?
+  providerAccountId String?              @unique
   emailVerifiedAt   DateTime?
   lastLoginAt       DateTime?
   createdAt         DateTime             @default(now())
@@ -152,6 +153,7 @@ model ResumeSection {
 
   resume      Resume            @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
+  @@unique([resumeId, type])
   @@index([resumeId, type])
   @@index([resumeId, sortOrder])
 }
