@@ -41,7 +41,7 @@ export async function POST(request) {
           authUser.email?.split("@")[0] ||
           "User",
         email: authUser.email,
-        authProvider: "credentials",
+        authProvider: "supabase",
         providerAccountId: authUser.id,
         emailVerifiedAt: authUser.email_confirmed_at
           ? new Date(authUser.email_confirmed_at)
@@ -70,7 +70,10 @@ export async function POST(request) {
       data: { lastLoginAt: new Date() },
     });
 
-    return jsonOk({ user });
+    return jsonOk({
+      user,
+      sessionActive: Boolean(data.session),
+    });
   } catch (error) {
     return jsonError(error.message || "Unable to login", 500);
   }

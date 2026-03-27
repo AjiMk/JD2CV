@@ -45,13 +45,8 @@ export default function Login() {
         throw new Error(data.error || "Unable to sign in");
       }
 
-      const syncResponse = await fetch("/api/auth/sync", {
-        method: "POST",
-      });
-
-      if (!syncResponse.ok) {
-        const syncData = await syncResponse.json().catch(() => ({}));
-        throw new Error(syncData.error || "Unable to sync user");
+      if (data.sessionActive === false) {
+        throw new Error("Unable to establish a session");
       }
 
       router.push("/dashboard");

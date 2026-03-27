@@ -43,7 +43,7 @@ export async function POST(request) {
       create: {
         name,
         email,
-        authProvider: "credentials",
+        authProvider: "supabase",
         providerAccountId: authUser.id,
         emailVerifiedAt: authUser.email_confirmed_at
           ? new Date(authUser.email_confirmed_at)
@@ -61,7 +61,12 @@ export async function POST(request) {
       include: { profile: true, resumes: true },
     });
 
-    return jsonOk({ user, authUser });
+    return jsonOk({
+      user,
+      authUser,
+      sessionActive: Boolean(data.session),
+      requiresEmailConfirmation: !data.session,
+    });
   } catch (error) {
     return jsonError(error.message || "Unable to register", 500);
   }

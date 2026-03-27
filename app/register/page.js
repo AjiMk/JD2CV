@@ -67,16 +67,13 @@ export default function Register() {
         throw new Error(data.error || "Unable to register");
       }
 
-      const syncResponse = await fetch("/api/auth/sync", {
-        method: "POST",
-      });
-
-      if (!syncResponse.ok) {
-        const syncData = await syncResponse.json().catch(() => ({}));
-        throw new Error(syncData.error || "Unable to sync user");
+      if (data.sessionActive) {
+        router.push("/dashboard");
+      } else {
+        setError(
+          "Account created. Check your email to confirm your address before signing in.",
+        );
       }
-
-      router.push("/dashboard");
       router.refresh();
     } catch (err) {
       setError(err.message || "Unable to register");

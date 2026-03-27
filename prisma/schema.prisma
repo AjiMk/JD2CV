@@ -28,6 +28,7 @@ enum ResumeStatus {
 
 enum AuthProvider {
   credentials
+  supabase
   google
   github
   microsoft
