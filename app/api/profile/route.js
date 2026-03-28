@@ -38,6 +38,7 @@ export async function PUT(request) {
     create: {
       userId: user.id,
       phone: body?.phone ?? null,
+      photoUrl: body?.photoUrl ?? null,
       countryId: body?.countryId ?? null,
       stateId: body?.stateId ?? null,
       pincode: body?.pincode ?? null,
@@ -48,6 +49,7 @@ export async function PUT(request) {
     },
     update: {
       phone: body?.phone ?? null,
+      photoUrl: body?.photoUrl ?? null,
       countryId: body?.countryId ?? null,
       stateId: body?.stateId ?? null,
       pincode: body?.pincode ?? null,

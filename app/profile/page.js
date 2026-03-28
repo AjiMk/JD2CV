@@ -37,6 +37,7 @@ export default function ProfilePage() {
   const [darkMode, setDarkMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [photoPreview, setPhotoPreview] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
   const [stepIndex, setStepIndex] = useState(0);
   const [maxUnlockedStep, setMaxUnlockedStep] = useState(0);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -84,13 +85,14 @@ export default function ProfilePage() {
             location: [profile.state?.name, profile.country?.name]
               .filter(Boolean)
               .join(", "),
-            photo: nextPhoto,
+            photo: profile.photoUrl || "",
             linkedin: profile.linkedin || "",
             github: profile.github || "",
             portfolio: profile.portfolio || "",
             summary: profile.summary || "",
           });
-          setPhotoPreview(nextPhoto);
+          setPhotoPreview(profile.photoUrl || nextPhoto);
+          setPhotoUrl(profile.photoUrl || "");
         }
       } catch {
         router.push("/login");
@@ -166,16 +168,39 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setPhotoPreview(URL.createObjectURL(file));
+
     const reader = new FileReader();
     reader.onload = () => {
       const value = typeof reader.result === "string" ? reader.result : "";
-      setPhotoPreview(value);
       setPersonalInfo({
         ...personalInfo,
         photo: value,
       });
     };
     reader.readAsDataURL(file);
+  };
+
+  const uploadProfilePhoto = async () => {
+    const file = photoInputRef.current?.files?.[0];
+    if (!file) return photoUrl || "";
+
+    const formData = new FormData();
+    formData.append("photo", file);
+
+    const response = await fetch("/api/profile/photo", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Unable to upload photo");
+    }
+
+    const data = await response.json();
+    setPhotoUrl(data.photoUrl || "");
+    return data.photoUrl || "";
   };
 
   const triggerPhotoUpload = () => {
@@ -242,11 +267,13 @@ export default function ProfilePage() {
     setFieldErrors({});
     setSaving(true);
     try {
+      const uploadedPhotoUrl = await uploadProfilePhoto();
       const response = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone: personalInfo.phone,
+          photoUrl: uploadedPhotoUrl || photoUrl || null,
           countryId: personalInfo.countryId || null,
           stateId: personalInfo.stateId || null,
           pincode: personalInfo.pincode || null,
