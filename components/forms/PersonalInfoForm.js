@@ -48,7 +48,7 @@ export default function PersonalInfoForm({
             onChange={handleChange}
             className={`${inputClassName} ${errors.fullName ? errorClassName : "border-gray-300"}`}
             placeholder="John Doe"
-            pattern="^[A-Za-z][A-Za-z\s.'-]*$"
+            pattern="^[A-Za-z][A-Za-z\\s.'-]*$"
             title="Use letters, spaces, apostrophes, hyphens, and periods only."
           />
           {errors.fullName ? (

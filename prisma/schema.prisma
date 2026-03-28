@@ -94,6 +94,7 @@ model Profile {
   id          String   @id @default(cuid())
   userId      String   @unique
   photoUrl    String?
+  photoThumbnailUrl String?
   phone       String?
   countryId   String?
   stateId     String?

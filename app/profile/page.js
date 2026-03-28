@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -30,6 +31,8 @@ const steps = [
   { id: "certifications", title: "Certifications" },
 ];
 
+const allowedPhotoMimeTypes = new Set(["image/jpeg", "image/jpg", "image/png"]);
+
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -38,13 +41,28 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [photoPreview, setPhotoPreview] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
+  const [photoPath, setPhotoPath] = useState("");
+  const [photoThumbnailPath, setPhotoThumbnailPath] = useState("");
+  const [refreshingPhoto, setRefreshingPhoto] = useState(false);
+  const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
+  const [photoEditorSrc, setPhotoEditorSrc] = useState("");
+  const [photoEditorFile, setPhotoEditorFile] = useState(null);
+  const [photoEditorZoom, setPhotoEditorZoom] = useState(1);
+  const [photoEditorPosition, setPhotoEditorPosition] = useState({
+    x: 0,
+    y: 0,
+  });
+  const [photoEditorDragging, setPhotoEditorDragging] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [maxUnlockedStep, setMaxUnlockedStep] = useState(0);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [photoError, setPhotoError] = useState("");
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const { personalInfo, setPersonalInfo } = useResumeStore();
   const photoInputRef = useRef(null);
+  const photoEditorImageRef = useRef(null);
+  const photoEditorBoxRef = useRef(null);
 
   useEffect(() => {
     const savedDarkMode = localStorage.getItem("darkMode");
@@ -75,12 +93,15 @@ export default function ProfilePage() {
         const profile = data.user?.profile;
         if (profile) {
           const nextPhoto = profile.photo || "";
+          const storedPhotoPath = profile.photoPath || profile.photoUrl || "";
+          const storedThumbnailPath =
+            profile.photoThumbnailPath || profile.photoThumbnailUrl || "";
           setPersonalInfo({
             fullName: data.user?.name || "",
             email: data.user?.email || "",
             phone: profile.phone || "",
-            countryId: profile.country?.id || "",
-            stateId: profile.state?.id || "",
+            countryId: profile.countryId || profile.country?.id || "",
+            stateId: profile.stateId || profile.state?.id || "",
             pincode: profile.pincode || "",
             location: [profile.state?.name, profile.country?.name]
               .filter(Boolean)
@@ -91,8 +112,12 @@ export default function ProfilePage() {
             portfolio: profile.portfolio || "",
             summary: profile.summary || "",
           });
-          setPhotoPreview(profile.photoUrl || nextPhoto);
+          setPhotoPreview(
+            profile.photoThumbnailUrl || profile.photoUrl || nextPhoto,
+          );
           setPhotoUrl(profile.photoUrl || "");
+          setPhotoPath(storedPhotoPath);
+          setPhotoThumbnailPath(storedThumbnailPath);
         }
       } catch {
         router.push("/login");
@@ -142,15 +167,34 @@ export default function ProfilePage() {
   }, [personalInfo.countryId]);
 
   useEffect(() => {
+    if (personalInfo.countryId && !states.length) {
+      const loadStates = async () => {
+        try {
+          const response = await fetch(
+            `/api/states?countryId=${personalInfo.countryId}`,
+          );
+          if (!response.ok) return;
+          const data = await response.json();
+          setStates(data.states || []);
+        } catch {
+          setStates([]);
+        }
+      };
+
+      loadStates();
+    }
+  }, [personalInfo.countryId, states.length]);
+
+  useEffect(() => {
     if (
       !personalInfo.countryId &&
       (personalInfo.stateId || personalInfo.pincode)
     ) {
-      setPersonalInfo({
-        ...personalInfo,
+      setPersonalInfo((current) => ({
+        ...current,
         stateId: "",
         pincode: "",
-      });
+      }));
     }
   }, [
     personalInfo.countryId,
@@ -168,7 +212,96 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setPhotoPreview(URL.createObjectURL(file));
+    const isAllowedType =
+      allowedPhotoMimeTypes.has(file.type) ||
+      /\.(jpe?g|png)$/i.test(file.name || "");
+
+    if (!isAllowedType) {
+      setPhotoError("Only JPG and PNG images are allowed.");
+      event.target.value = "";
+      return;
+    }
+
+    setPhotoError("");
+    if (photoEditorSrc) URL.revokeObjectURL(photoEditorSrc);
+    setPhotoEditorFile(file);
+    setPhotoEditorSrc(URL.createObjectURL(file));
+    setPhotoEditorZoom(1);
+    setPhotoEditorPosition({ x: 0, y: 0 });
+    setPhotoEditorOpen(true);
+    event.target.value = "";
+  };
+
+  const handlePhotoEditorImageLoad = () => {
+    setPhotoEditorPosition({ x: 0, y: 0 });
+  };
+
+  const handlePhotoEditorMouseDown = (event) => {
+    event.preventDefault();
+    setPhotoEditorDragging(true);
+  };
+
+  const handlePhotoEditorMouseMove = (event) => {
+    if (!photoEditorDragging || !photoEditorBoxRef.current) return;
+    const rect = photoEditorBoxRef.current.getBoundingClientRect();
+    setPhotoEditorPosition((current) => ({
+      x: current.x + event.movementX,
+      y: current.y + event.movementY,
+    }));
+  };
+
+  const handlePhotoEditorMouseUp = () => {
+    setPhotoEditorDragging(false);
+  };
+
+  const createEditedPhotoFile = async () => {
+    if (!photoEditorFile || !photoEditorImageRef.current)
+      return photoEditorFile;
+
+    const image = photoEditorImageRef.current;
+    const outputSize = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = outputSize;
+    canvas.height = outputSize;
+    const ctx = canvas.getContext("2d");
+
+    const baseScale = Math.max(
+      outputSize / image.naturalWidth,
+      outputSize / image.naturalHeight,
+    );
+    const scale = baseScale * photoEditorZoom;
+    const drawWidth = image.naturalWidth * scale;
+    const drawHeight = image.naturalHeight * scale;
+    const offsetX = (photoEditorPosition.x * outputSize) / 240;
+    const offsetY = (photoEditorPosition.y * outputSize) / 240;
+    const x = (outputSize - drawWidth) / 2 + offsetX;
+    const y = (outputSize - drawHeight) / 2 + offsetY;
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, outputSize, outputSize);
+    ctx.drawImage(image, x, y, drawWidth, drawHeight);
+
+    const mimeType =
+      photoEditorFile.type === "image/png" ? "image/png" : "image/jpeg";
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob(resolve, mimeType, 0.92),
+    );
+
+    if (!blob) return photoEditorFile;
+
+    const extension = mimeType === "image/png" ? "png" : "jpg";
+    return new File([blob], `profile-photo.${extension}`, { type: mimeType });
+  };
+
+  const handlePhotoEditorConfirm = async () => {
+    const editedFile = await createEditedPhotoFile();
+    if (!editedFile) return;
+
+    if (photoEditorSrc) URL.revokeObjectURL(photoEditorSrc);
+    setPhotoPreview(URL.createObjectURL(editedFile));
+    setPhotoUrl("");
+    setPhotoEditorOpen(false);
+    setPhotoEditorFile(editedFile);
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -178,12 +311,26 @@ export default function ProfilePage() {
         photo: value,
       });
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(editedFile);
+  };
+
+  const closePhotoEditor = () => {
+    if (photoEditorSrc) URL.revokeObjectURL(photoEditorSrc);
+    setPhotoEditorOpen(false);
+    setPhotoEditorSrc("");
+    setPhotoEditorFile(null);
+    setPhotoEditorZoom(1);
+    setPhotoEditorPosition({ x: 0, y: 0 });
   };
 
   const uploadProfilePhoto = async () => {
-    const file = photoInputRef.current?.files?.[0];
-    if (!file) return photoUrl || "";
+    const file = photoEditorFile || photoInputRef.current?.files?.[0];
+    if (!file) {
+      return {
+        storagePath: photoPath || "",
+        thumbnailPath: photoThumbnailPath || "",
+      };
+    }
 
     const formData = new FormData();
     formData.append("photo", file);
@@ -199,8 +346,52 @@ export default function ProfilePage() {
     }
 
     const data = await response.json();
-    setPhotoUrl(data.photoUrl || "");
-    return data.photoUrl || "";
+    setPhotoPath(data.storagePath || "");
+    setPhotoThumbnailPath(data.thumbnailPath || "");
+    return {
+      storagePath: data.storagePath || "",
+      thumbnailPath: data.thumbnailPath || "",
+    };
+  };
+
+  const refreshProfilePhoto = async () => {
+    if (refreshingPhoto) return;
+    setRefreshingPhoto(true);
+    try {
+      const response = await fetch("/api/auth/me", { cache: "no-store" });
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const photo =
+        data.user?.profile?.photoThumbnailUrl ||
+        data.user?.profile?.photoUrl ||
+        "";
+      const photoStoragePath = data.user?.profile?.photoPath || "";
+      const photoStorageThumbnail =
+        data.user?.profile?.photoThumbnailPath ||
+        data.user?.profile?.photoThumbnailUrl ||
+        "";
+      if (photo) {
+        setPhotoPreview(photo);
+        setPhotoUrl(photo);
+      }
+      if (photoStoragePath) {
+        setPhotoPath(photoStoragePath);
+      }
+      if (photoStorageThumbnail) {
+        setPhotoThumbnailPath(photoStorageThumbnail);
+      }
+    } finally {
+      setRefreshingPhoto(false);
+    }
+  };
+
+  const refreshHeaderUser = async () => {
+    const response = await fetch("/api/auth/me", { cache: "no-store" });
+    if (!response.ok) return;
+
+    const data = await response.json();
+    setUser(data.user);
   };
 
   const triggerPhotoUpload = () => {
@@ -267,13 +458,16 @@ export default function ProfilePage() {
     setFieldErrors({});
     setSaving(true);
     try {
-      const uploadedPhotoUrl = await uploadProfilePhoto();
+      const uploadedPhoto = await uploadProfilePhoto();
       const response = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          fullName: personalInfo.fullName,
           phone: personalInfo.phone,
-          photoUrl: uploadedPhotoUrl || photoUrl || null,
+          photoUrl: uploadedPhoto.storagePath || photoPath || null,
+          photoThumbnailUrl:
+            uploadedPhoto.thumbnailPath || photoThumbnailPath || null,
           countryId: personalInfo.countryId || null,
           stateId: personalInfo.stateId || null,
           pincode: personalInfo.pincode || null,
@@ -288,6 +482,9 @@ export default function ProfilePage() {
         throw new Error(data.error || "Unable to save profile");
       }
 
+      await refreshHeaderUser();
+      await refreshProfilePhoto();
+      setPhotoEditorFile(null);
       setMaxUnlockedStep(1);
       setStepIndex(1);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -414,10 +611,13 @@ export default function ProfilePage() {
                       className="group relative h-24 w-24 overflow-hidden rounded-full border border-gray-200 bg-gray-50 text-left transition-transform hover:scale-[1.02] dark:border-gray-800 dark:bg-gray-800"
                     >
                       {photoPreview ? (
-                        <img
+                        <Image
                           src={photoPreview}
                           alt="Profile preview"
-                          className="h-full w-full object-cover"
+                          fill
+                          sizes="96px"
+                          className="object-cover"
+                          onError={refreshProfilePhoto}
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-gray-400">
@@ -431,10 +631,19 @@ export default function ProfilePage() {
                     <input
                       ref={photoInputRef}
                       type="file"
-                      accept="image/*"
+                      accept=".jpg,.jpeg,.png,image/jpeg,image/jpg,image/png"
                       onChange={handlePhotoChange}
                       className="hidden"
                     />
+                    {photoError ? (
+                      <p className="max-w-48 text-right text-xs text-red-600 dark:text-red-400">
+                        {photoError}
+                      </p>
+                    ) : (
+                      <p className="max-w-48 text-right text-xs text-gray-500 dark:text-gray-400">
+                        JPG or PNG only
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -580,6 +789,91 @@ export default function ProfilePage() {
           )}
         </section>
       </main>
+
+      {photoEditorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl dark:bg-gray-900">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Adjust photo
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Drag the image and zoom before saving.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closePhotoEditor}
+                className="rounded-lg px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Close
+              </button>
+            </div>
+
+            <div
+              ref={photoEditorBoxRef}
+              onMouseMove={handlePhotoEditorMouseMove}
+              onMouseUp={handlePhotoEditorMouseUp}
+              onMouseLeave={handlePhotoEditorMouseUp}
+              className="mt-4 flex h-80 items-center justify-center overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800"
+            >
+              {photoEditorSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  ref={photoEditorImageRef}
+                  src={photoEditorSrc}
+                  alt="Selected"
+                  onLoad={handlePhotoEditorImageLoad}
+                  onMouseDown={handlePhotoEditorMouseDown}
+                  draggable={false}
+                  className="select-none object-cover"
+                  style={{
+                    width: "240px",
+                    height: "240px",
+                    transform: `translate(${photoEditorPosition.x}px, ${photoEditorPosition.y}px) scale(${photoEditorZoom})`,
+                    cursor: photoEditorDragging ? "grabbing" : "grab",
+                  }}
+                />
+              ) : null}
+            </div>
+
+            <div className="mt-4">
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                Zoom
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="2.5"
+                step="0.01"
+                value={photoEditorZoom}
+                onChange={(event) =>
+                  setPhotoEditorZoom(Number(event.target.value))
+                }
+                className="w-full"
+              />
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={closePhotoEditor}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handlePhotoEditorConfirm}
+                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+              >
+                Use photo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

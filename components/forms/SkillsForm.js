@@ -70,7 +70,7 @@ export default function SkillsForm() {
               placeholder="e.g., JavaScript, Python, React"
               minLength={2}
               maxLength={60}
-              pattern="^[A-Za-z0-9][A-Za-z0-9\s.+#/-]*$"
+              pattern="^[A-Za-z0-9][A-Za-z0-9\s.+#/ -]*$"
               title="Use a short skill name with letters, numbers, and common symbols only."
             />
             <button
