@@ -4,6 +4,8 @@ import useResumeStore from "@/store/resumeStore";
 
 export default function JobDescriptionForm() {
   const { jobDescription, setJobDescription } = useResumeStore();
+  const inputClassName =
+    "w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500";
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -21,8 +23,11 @@ export default function JobDescriptionForm() {
           value={jobDescription}
           onChange={(e) => setJobDescription(e.target.value)}
           rows="12"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          className={inputClassName}
           placeholder="Paste the complete job description here. The AI will analyze it to optimize your resume for ATS compatibility and relevance..."
+          minLength={50}
+          maxLength={5000}
+          required
         />
         <p className="text-sm text-gray-600 mt-2">
           Pro tip: Include the full job description including requirements,

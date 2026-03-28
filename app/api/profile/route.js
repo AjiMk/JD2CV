@@ -33,11 +33,23 @@ export async function PUT(request) {
   if (!user) return jsonError("Unauthorized", 401);
 
   const body = await request.json();
+  const fullName =
+    typeof body?.fullName === "string" ? body.fullName.trim() : "";
+
+  if (fullName && fullName !== user.name) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { name: fullName },
+    });
+  }
+
   const profile = await prisma.profile.upsert({
     where: { userId: user.id },
     create: {
       userId: user.id,
       phone: body?.phone ?? null,
+      photoUrl: body?.photoUrl ?? null,
+      photoThumbnailUrl: body?.photoThumbnailUrl ?? null,
       countryId: body?.countryId ?? null,
       stateId: body?.stateId ?? null,
       pincode: body?.pincode ?? null,
@@ -48,6 +60,8 @@ export async function PUT(request) {
     },
     update: {
       phone: body?.phone ?? null,
+      photoUrl: body?.photoUrl ?? null,
+      photoThumbnailUrl: body?.photoThumbnailUrl ?? null,
       countryId: body?.countryId ?? null,
       stateId: body?.stateId ?? null,
       pincode: body?.pincode ?? null,
