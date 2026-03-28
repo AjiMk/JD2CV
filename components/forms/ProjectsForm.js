@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useResumeStore from "@/store/resumeStore";
 import {
   FiPlus,
@@ -11,77 +11,259 @@ import {
   FiExternalLink,
 } from "react-icons/fi";
 
+const blankForm = {
+  name: "",
+  description: "",
+  technologies: [],
+  link: "",
+  highlights: "",
+};
+
 export default function ProjectsForm() {
-  const { projects, addProject, updateProject, removeProject } =
-    useResumeStore();
+  const { projects, setProjects } = useResumeStore();
   const [editing, setEditing] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    technologies: "",
-    link: "",
-    highlights: "",
-  });
+  const [formData, setFormData] = useState(blankForm);
+  const [skillCatalog, setSkillCatalog] = useState([]);
+  const [formError, setFormError] = useState("");
+  const [saveState, setSaveState] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [projectsResponse, skillsResponse] = await Promise.all([
+          fetch("/api/projects", { cache: "no-store", credentials: "include" }),
+          fetch("/api/skills", { cache: "no-store", credentials: "include" }),
+        ]);
 
-  const handleAdd = () => {
-    if (formData.name && formData.description) {
-      addProject({
-        ...formData,
-        id: Date.now(),
-      });
-      resetForm();
+        if (skillsResponse.ok) {
+          const skillsData = await skillsResponse.json();
+          setSkillCatalog(skillsData.skills || []);
+        }
+
+        if (projectsResponse.ok) {
+          const projectsData = await projectsResponse.json();
+          const loadedProjects = Array.isArray(projectsData.projects)
+            ? projectsData.projects
+            : [];
+          setProjects(loadedProjects);
+        }
+      } catch {
+        setSkillCatalog([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [setProjects]);
+
+  const techSuggestions = useMemo(
+    () =>
+      skillCatalog
+        .filter((skill) => !skill.category || skill.category === "technical")
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [skillCatalog],
+  );
+
+  const inputClassName =
+    "w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500";
+
+  const validateForm = () => {
+    const errors = [];
+
+    if (!formData.name.trim()) {
+      errors.push("Project name is required.");
+    } else if (formData.name.trim().length < 2) {
+      errors.push("Project name must be at least 2 characters.");
     }
+
+    if (!formData.description.trim()) {
+      errors.push("Description is required.");
+    } else if (formData.description.trim().length < 10) {
+      errors.push("Description should be at least 10 characters.");
+    }
+
+    if (formData.link.trim() && !/^https?:\/\/.+/i.test(formData.link.trim())) {
+      errors.push("Project link must be a valid URL.");
+    }
+
+    if (formData.technologies.length === 0) {
+      errors.push("Select at least one technology.");
+    }
+
+    return errors;
   };
 
-  const handleUpdate = (index) => {
-    updateProject(index, formData);
+  const resetForm = () => {
+    setFormData(blankForm);
     setEditing(null);
+  };
+
+  const persistProjects = async (nextProjects, successMessage) => {
+    setProjects(nextProjects);
+
+    const response = await fetch("/api/projects", {
+      method: "PUT",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        projects: nextProjects,
+      }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || "Unable to save projects.");
+    }
+
+    const data = await response.json();
+    setProjects(data.projects || []);
+    setSaveState(successMessage);
+  };
+
+  const handleAddProject = async () => {
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setFormError(errors.join(" "));
+      return;
+    }
+
+    const nextProject = {
+      id:
+        editing !== null
+          ? projects[editing]?.id || Date.now().toString()
+          : Date.now().toString(),
+      ...formData,
+    };
+
+    const nextProjects =
+      editing !== null
+        ? projects.map((item, index) =>
+            index === editing ? nextProject : item,
+          )
+        : [...projects, nextProject];
+
+    await persistProjects(nextProjects, "Project saved.");
     resetForm();
+  };
+
+  const handleSave = async () => {
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setFormError(errors.join(" "));
+      return;
+    }
+
+    const nextProject = {
+      id:
+        editing !== null
+          ? projects[editing]?.id || Date.now().toString()
+          : Date.now().toString(),
+      ...formData,
+    };
+
+    const nextProjects =
+      editing !== null
+        ? projects.map((item, index) =>
+            index === editing ? nextProject : item,
+          )
+        : [...projects, nextProject];
+
+    await persistProjects(nextProjects, "Project saved.");
+    setEditing(editing !== null ? editing : null);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setFormError("");
+    setSaveState("");
+
+    try {
+      const submitAction =
+        event.nativeEvent?.submitter?.dataset?.action || "save";
+
+      if (submitAction === "add") {
+        await handleAddProject();
+        return;
+      }
+
+      await handleSave();
+    } catch (error) {
+      setFormError(error.message || "Unable to save projects.");
+    }
   };
 
   const handleEdit = (index, project) => {
     setEditing(index);
-    setFormData(project);
-  };
-
-  const handleCancel = () => {
-    setEditing(null);
-    resetForm();
-  };
-
-  const inputClassName =
-    "w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500";
-
-  const resetForm = () => {
     setFormData({
-      name: "",
-      description: "",
-      technologies: "",
-      link: "",
-      highlights: "",
+      name: project.name || "",
+      description: project.description || "",
+      technologies: Array.isArray(project.technologies)
+        ? project.technologies
+        : typeof project.technologies === "string"
+          ? project.technologies
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : [],
+      link: project.link || "",
+      highlights: project.highlights || "",
+    });
+    setFormError("");
+    setSaveState("");
+  };
+
+  const handleRemove = async (index) => {
+    const nextProjects = projects.filter(
+      (_, currentIndex) => currentIndex !== index,
+    );
+
+    try {
+      await persistProjects(nextProjects, "Project removed.");
+      if (editing === index) {
+        resetForm();
+      }
+    } catch (error) {
+      setFormError(error.message || "Unable to remove project.");
+    }
+  };
+
+  const toggleTechnology = (technology) => {
+    setFormData((current) => {
+      const exists = current.technologies.includes(technology);
+      return {
+        ...current,
+        technologies: exists
+          ? current.technologies.filter((item) => item !== technology)
+          : [...current.technologies, technology],
+      };
     });
   };
 
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Projects</h2>
+  if (loading) {
+    return (
+      <div className="rounded-lg bg-white p-6 shadow-md">
+        <h2 className="mb-4 text-2xl font-bold text-gray-900">Projects</h2>
+        <p className="text-sm text-gray-500">Loading projects...</p>
+      </div>
+    );
+  }
 
-      {/* Projects List */}
+  return (
+    <div className="rounded-lg bg-white p-6 shadow-md">
+      <h2 className="mb-6 text-2xl font-bold text-gray-900">Projects</h2>
+
       {projects.length > 0 && (
-        <div className="space-y-4 mb-6">
+        <div className="mb-6 space-y-4">
           {projects.map((project, index) => (
             <div
-              key={project.id}
-              className="border border-gray-200 rounded-lg p-4"
+              key={project.id || `${project.name}-${index}`}
+              className="rounded-lg border border-gray-200 p-4"
             >
-              <div className="flex justify-between items-start">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-gray-900">
@@ -98,29 +280,34 @@ export default function ProjectsForm() {
                       </a>
                     )}
                   </div>
-                  <p className="text-gray-700 mt-1">{project.description}</p>
-                  {project.technologies && (
-                    <p className="text-sm text-gray-600 mt-2">
-                      <span className="font-medium">Technologies:</span>{" "}
-                      {project.technologies}
-                    </p>
+                  {project.description && (
+                    <p className="mt-1 text-gray-700">{project.description}</p>
                   )}
+                  {Array.isArray(project.technologies) &&
+                    project.technologies.length > 0 && (
+                      <p className="mt-2 text-sm text-gray-600">
+                        <span className="font-medium">Technologies:</span>{" "}
+                        {project.technologies.join(", ")}
+                      </p>
+                    )}
                   {project.highlights && (
-                    <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">
+                    <p className="mt-2 whitespace-pre-line text-sm text-gray-600">
                       {project.highlights}
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2 ml-4">
+                <div className="flex gap-2">
                   <button
+                    type="button"
                     onClick={() => handleEdit(index, project)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                    className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"
                   >
                     <FiEdit2 className="h-5 w-5" />
                   </button>
                   <button
-                    onClick={() => removeProject(index)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    type="button"
+                    onClick={() => handleRemove(index)}
+                    className="rounded-lg p-2 text-red-600 hover:bg-red-50"
                   >
                     <FiTrash2 className="h-5 w-5" />
                   </button>
@@ -131,123 +318,154 @@ export default function ProjectsForm() {
         </div>
       )}
 
-      {/* Add/Edit Form */}
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-lg border-2 border-dashed border-gray-300 p-6"
+      >
+        <h3 className="mb-4 font-semibold text-gray-900">
           {editing !== null ? "Edit Project" : "Add Project"}
         </h3>
 
         <div className="grid grid-cols-1 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700">
               Project Name *
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
-              onChange={handleChange}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className={inputClassName}
               placeholder="E-commerce Platform"
-              minLength={2}
-              maxLength={120}
-              required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700">
               Description *
             </label>
             <textarea
               name="description"
               value={formData.description}
-              onChange={handleChange}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               rows="2"
               className={inputClassName}
               placeholder="A full-stack e-commerce application with payment integration..."
-              minLength={10}
-              maxLength={500}
-              required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Technologies Used
-            </label>
-            <input
-              type="text"
-              name="technologies"
-              value={formData.technologies}
-              onChange={handleChange}
-              className={inputClassName}
-              placeholder="React, Node.js, MongoDB, AWS"
-              maxLength={120}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700">
               Project Link (GitHub/Live Demo)
             </label>
             <input
               type="url"
               name="link"
               value={formData.link}
-              onChange={handleChange}
+              onChange={(e) =>
+                setFormData({ ...formData, link: e.target.value })
+              }
               className={inputClassName}
               placeholder="https://github.com/username/project"
-              maxLength={200}
-              pattern="^https?:\/\/.*$"
-              title="Enter a valid project URL."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700">
               Key Highlights & Achievements
             </label>
             <textarea
               name="highlights"
               value={formData.highlights}
-              onChange={handleChange}
+              onChange={(e) =>
+                setFormData({ ...formData, highlights: e.target.value })
+              }
               rows="3"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              placeholder="• Implemented secure payment processing with Stripe&#10;• Achieved 99.9% uptime with AWS infrastructure&#10;• Reduced page load time by 40% through optimization"
+              className={inputClassName}
+              placeholder="Implemented secure payment processing with Stripe"
             />
           </div>
         </div>
 
-        <div className="flex gap-3 mt-4">
-          {editing !== null ? (
-            <>
-              <button
-                onClick={() => handleUpdate(editing)}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                <FiCheck className="h-5 w-5" />
-                Update
-              </button>
-              <button
-                onClick={handleCancel}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
-                <FiX className="h-5 w-5" />
-                Cancel
-              </button>
-            </>
-          ) : (
+        <div className="mt-6">
+          <h4 className="mb-3 text-sm font-semibold text-gray-900">
+            Available Technologies
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {techSuggestions.length === 0 ? (
+              <p className="text-sm text-gray-400">
+                No technologies found in the skills table.
+              </p>
+            ) : (
+              techSuggestions.map((skill) => {
+                const selected = formData.technologies.includes(skill.name);
+
+                return (
+                  <button
+                    key={skill.id}
+                    type="button"
+                    onClick={() => toggleTechnology(skill.name)}
+                    className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                      selected
+                        ? "bg-primary-600 text-white hover:bg-primary-700"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {selected ? "✓ " : "+ "}
+                    {skill.name}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <button
+            type="submit"
+            data-action="save"
+            className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700"
+          >
+            <FiCheck className="h-5 w-5" />
+            Save
+          </button>
+          <button
+            type="submit"
+            data-action="add"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <FiPlus className="h-5 w-5" />
+            Add Project
+          </button>
+          {editing !== null && (
             <button
-              onClick={handleAdd}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              type="button"
+              onClick={() => {
+                resetForm();
+                setFormError("");
+                setSaveState("");
+              }}
+              className="inline-flex items-center gap-2 rounded-lg bg-gray-600 px-4 py-2 font-medium text-white hover:bg-gray-700"
             >
-              <FiPlus className="h-5 w-5" />
-              Add Project
+              <FiX className="h-5 w-5" />
+              Cancel
             </button>
           )}
         </div>
-      </div>
+
+        {(formError || saveState) && (
+          <p
+            className={`mt-4 text-sm ${formError ? "text-red-600" : "text-green-600"}`}
+          >
+            {formError || saveState}
+          </p>
+        )}
+      </form>
     </div>
   );
 }
