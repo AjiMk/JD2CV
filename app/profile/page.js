@@ -1,20 +1,34 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  FiArrowLeft,
+  FiArrowRight,
   FiEdit3,
   FiFileText,
   FiMoon,
   FiSun,
-  FiUser,
-  FiCheckCircle,
-  FiCompass,
+  FiUpload,
 } from "react-icons/fi";
 import PersonalInfoForm from "@/components/forms/PersonalInfoForm";
+import EducationForm from "@/components/forms/EducationForm";
+import WorkExperienceForm from "@/components/forms/WorkExperienceForm";
+import SkillsForm from "@/components/forms/SkillsForm";
+import ProjectsForm from "@/components/forms/ProjectsForm";
+import CertificationsForm from "@/components/forms/CertificationsForm";
 import UserAvatar from "@/components/UserAvatar";
 import useResumeStore from "@/store/resumeStore";
+
+const steps = [
+  { id: "personal", title: "Personal Info" },
+  { id: "education", title: "Education" },
+  { id: "experience", title: "Experience" },
+  { id: "skills", title: "Skills" },
+  { id: "projects", title: "Projects" },
+  { id: "certifications", title: "Certifications" },
+];
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -22,19 +36,23 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [saving, setSaving] = useState(false);
-  const {
-    personalInfo,
-    education,
-    workExperience,
-    skills,
-    projects,
-    setPersonalInfo,
-  } = useResumeStore();
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [stepIndex, setStepIndex] = useState(0);
+  const [maxUnlockedStep, setMaxUnlockedStep] = useState(0);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const { personalInfo, setPersonalInfo } = useResumeStore();
+  const photoInputRef = useRef(null);
 
   useEffect(() => {
     const savedDarkMode = localStorage.getItem("darkMode");
     if (savedDarkMode !== null) setDarkMode(JSON.parse(savedDarkMode));
   }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [stepIndex]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -55,18 +73,24 @@ export default function ProfilePage() {
 
         const profile = data.user?.profile;
         if (profile) {
+          const nextPhoto = profile.photo || "";
           setPersonalInfo({
             fullName: data.user?.name || "",
             email: data.user?.email || "",
             phone: profile.phone || "",
+            countryId: profile.country?.id || "",
+            stateId: profile.state?.id || "",
+            pincode: profile.pincode || "",
             location: [profile.state?.name, profile.country?.name]
               .filter(Boolean)
               .join(", "),
+            photo: nextPhoto,
             linkedin: profile.linkedin || "",
             github: profile.github || "",
             portfolio: profile.portfolio || "",
             summary: profile.summary || "",
           });
+          setPhotoPreview(nextPhoto);
         }
       } catch {
         router.push("/login");
@@ -78,26 +102,144 @@ export default function ProfilePage() {
     loadProfile();
   }, [router, setPersonalInfo]);
 
-  const profileCompletion = useMemo(() => {
-    const checks = [
-      personalInfo.fullName,
-      personalInfo.email,
-      personalInfo.phone,
-      personalInfo.location,
-      education.length > 0,
-      workExperience.length > 0,
-      skills.technical.length > 0,
-      projects.length > 0,
-    ];
-    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
-  }, [personalInfo, education, workExperience, skills, projects]);
+  useEffect(() => {
+    const loadCountries = async () => {
+      try {
+        const response = await fetch("/api/countries");
+        if (!response.ok) return;
+        const data = await response.json();
+        setCountries(data.countries || []);
+      } catch {
+        setCountries([]);
+      }
+    };
+
+    loadCountries();
+  }, []);
+
+  useEffect(() => {
+    const loadStates = async () => {
+      if (!personalInfo.countryId) {
+        setStates([]);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/states?countryId=${personalInfo.countryId}`,
+        );
+        if (!response.ok) return;
+        const data = await response.json();
+        setStates(data.states || []);
+      } catch {
+        setStates([]);
+      }
+    };
+
+    loadStates();
+  }, [personalInfo.countryId]);
+
+  useEffect(() => {
+    if (
+      !personalInfo.countryId &&
+      (personalInfo.stateId || personalInfo.pincode)
+    ) {
+      setPersonalInfo({
+        ...personalInfo,
+        stateId: "",
+        pincode: "",
+      });
+    }
+  }, [
+    personalInfo.countryId,
+    personalInfo.stateId,
+    personalInfo.pincode,
+    setPersonalInfo,
+  ]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   };
 
-  const handleSave = async () => {
+  const handlePhotoChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = typeof reader.result === "string" ? reader.result : "";
+      setPhotoPreview(value);
+      setPersonalInfo({
+        ...personalInfo,
+        photo: value,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const triggerPhotoUpload = () => {
+    photoInputRef.current?.click();
+  };
+
+  const handleSaveProfile = async (event) => {
+    event.preventDefault();
+    const nextErrors = {};
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const namePattern = /^[A-Za-z][A-Za-z\s.'-]*$/;
+    const selectedCountry = countries.find(
+      (country) => country.id === personalInfo.countryId,
+    );
+    const selectedState = states.find(
+      (state) => state.id === personalInfo.stateId,
+    );
+
+    if (!personalInfo.fullName?.trim()) {
+      nextErrors.fullName = "Full name is required.";
+    } else if (!namePattern.test(personalInfo.fullName.trim())) {
+      nextErrors.fullName =
+        "Use letters, spaces, apostrophes, hyphens, and periods only.";
+    }
+
+    if (!personalInfo.email?.trim()) {
+      nextErrors.email = "Email is required.";
+    } else if (!emailPattern.test(personalInfo.email.trim())) {
+      nextErrors.email = "Enter a valid email address.";
+    }
+
+    if (!personalInfo.phone?.trim()) {
+      nextErrors.phone = "Phone number is required.";
+    } else if (!selectedCountry) {
+      nextErrors.country = "Select a country first.";
+    } else if (personalInfo.phone.trim().length < 7) {
+      nextErrors.phone = `Enter a valid phone number for ${selectedCountry.name}.`;
+    }
+
+    if (!selectedCountry) {
+      nextErrors.country = "Select a country first.";
+    }
+
+    if (!personalInfo.stateId) {
+      nextErrors.stateId = "State / province is required.";
+    } else if (!selectedState) {
+      nextErrors.stateId = "Select a valid state / province.";
+    }
+
+    if (selectedCountry?.code === "IN" && !personalInfo.pincode?.trim()) {
+      nextErrors.pincode = "Pincode is required for India.";
+    } else if (
+      personalInfo.pincode &&
+      !/^[A-Za-z0-9\s-]{3,12}$/.test(personalInfo.pincode.trim())
+    ) {
+      nextErrors.pincode = "Enter a valid pincode.";
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      return;
+    }
+
+    setFieldErrors({});
     setSaving(true);
     try {
       const response = await fetch("/api/profile", {
@@ -105,13 +247,12 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone: personalInfo.phone,
-          countryId: null,
-          stateId: null,
-          pincode: null,
+          countryId: personalInfo.countryId || null,
+          stateId: personalInfo.stateId || null,
+          pincode: personalInfo.pincode || null,
           linkedin: personalInfo.linkedin,
           github: personalInfo.github,
           portfolio: personalInfo.portfolio,
-          summary: personalInfo.summary,
         }),
       });
 
@@ -119,10 +260,29 @@ export default function ProfilePage() {
         const data = await response.json();
         throw new Error(data.error || "Unable to save profile");
       }
+
+      setMaxUnlockedStep(1);
+      setStepIndex(1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);
     }
   };
+
+  const handleNext = () => {
+    setStepIndex((value) => {
+      const nextIndex = Math.min(value + 1, steps.length - 1);
+      setMaxUnlockedStep((current) => Math.max(current, nextIndex));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return nextIndex;
+    });
+  };
+  const handleBack = () => {
+    setStepIndex((value) => Math.max(value - 1, 0));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const progress = ((stepIndex + 1) / steps.length) * 100;
 
   if (loading || !user) {
     return (
@@ -165,117 +325,234 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <main className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <StatCard
-            title="Profile Completion"
-            value={`${profileCompletion}%`}
-            icon={FiCheckCircle}
-          />
-          <StatCard
-            title="Resume Sections"
-            value={4}
-            subtitle="Education, work, skills, projects"
-            icon={FiCompass}
-          />
-          <StatCard
-            title="Profile Focus"
-            value="Personal Details"
-            subtitle="Keep this section clean and complete"
-            icon={FiUser}
-          />
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Profile update progress
+              </p>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Step {stepIndex + 1} of {steps.length}: {steps[stepIndex].title}
+              </h2>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {Math.round(progress)}%
+            </p>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+            <div
+              className="h-full rounded-full bg-primary-600 transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {steps.map((step, index) => (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => {
+                  if (index <= maxUnlockedStep) {
+                    setStepIndex(index);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                }}
+                disabled={index > maxUnlockedStep}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${index === stepIndex ? "bg-primary-600 text-white" : index < stepIndex ? "bg-primary-50 text-primary-700 dark:bg-gray-800 dark:text-primary-300" : index <= maxUnlockedStep ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" : "cursor-not-allowed bg-gray-100 text-gray-400 opacity-50 dark:bg-gray-800 dark:text-gray-600"}`}
+              >
+                {step.title}
+              </button>
+            ))}
+          </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                  Personal Information
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  This is the profile area used across the application.
-                </p>
-              </div>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 disabled:opacity-50"
-              >
-                <FiEdit3 className="h-5 w-5" />
-                {saving ? "Saving..." : "Save Profile"}
-              </button>
-            </div>
-            <PersonalInfoForm />
-          </div>
+        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          {stepIndex === 0 && (
+            <>
+              <form onSubmit={handleSaveProfile}>
+                <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                      Personal Information
+                    </h2>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      Save this first to unlock the next profile step.
+                    </p>
+                  </div>
 
-          <aside className="space-y-6">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Profile Summary
-              </h3>
-              <div className="space-y-3 text-sm">
-                <Row label="Name" value={personalInfo.fullName || "Not set"} />
-                <Row label="Email" value={personalInfo.email || "Not set"} />
-                <Row label="Phone" value={personalInfo.phone || "Not set"} />
-                <Row
-                  label="Location"
-                  value={personalInfo.location || "Not set"}
-                />
-                <Row
-                  label="LinkedIn"
-                  value={personalInfo.linkedin || "Not set"}
-                />
-              </div>
-            </div>
+                  <div className="flex flex-col items-start gap-3 md:items-end">
+                    <button
+                      type="button"
+                      onClick={triggerPhotoUpload}
+                      className="group relative h-24 w-24 overflow-hidden rounded-full border border-gray-200 bg-gray-50 text-left transition-transform hover:scale-[1.02] dark:border-gray-800 dark:bg-gray-800"
+                    >
+                      {photoPreview ? (
+                        <img
+                          src={photoPreview}
+                          alt="Profile preview"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-gray-400">
+                          <FiUpload className="h-8 w-8" />
+                        </div>
+                      )}
+                      <span className="absolute inset-0 flex items-end justify-center bg-black/0 px-2 pb-2 text-[10px] font-medium text-white opacity-0 transition-colors group-hover:bg-black/20 group-hover:opacity-100">
+                        Click to upload
+                      </span>
+                    </button>
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-4">
-                What belongs here
-              </h3>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                <li>• Personal details only</li>
-                <li>• Contact links and location</li>
-                <li>• Information used to personalize resumes</li>
-              </ul>
-            </div>
-          </aside>
+                <PersonalInfoForm
+                  showSummary={false}
+                  errors={fieldErrors}
+                  countries={countries}
+                  states={states}
+                />
+
+                <div className="mt-8 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+                  >
+                    <FiEdit3 className="h-4 w-4" />
+                    {saving ? "Saving..." : "Save and continue"}
+                    <FiArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
+
+          {stepIndex === 1 && (
+            <>
+              <EducationForm />
+              <div className="mt-8 flex justify-between">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  <FiArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+                >
+                  Next
+                  <FiArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </>
+          )}
+
+          {stepIndex === 2 && (
+            <>
+              <WorkExperienceForm />
+              <div className="mt-8 flex justify-between">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  <FiArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+                >
+                  Next
+                  <FiArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </>
+          )}
+
+          {stepIndex === 3 && (
+            <>
+              <SkillsForm />
+              <div className="mt-8 flex justify-between">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  <FiArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+                >
+                  Next
+                  <FiArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </>
+          )}
+
+          {stepIndex === 4 && (
+            <>
+              <ProjectsForm />
+              <div className="mt-8 flex justify-between">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  <FiArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+                >
+                  Next
+                  <FiArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </>
+          )}
+
+          {stepIndex === 5 && (
+            <>
+              <CertificationsForm />
+              <div className="mt-8 flex justify-between">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  <FiArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+                <Link
+                  href="/resume-builder"
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+                >
+                  Finish in Resume Builder
+                  <FiArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </>
+          )}
         </section>
       </main>
-    </div>
-  );
-}
-
-function StatCard({ title, value, subtitle, icon: Icon }) {
-  return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
-          <h3 className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {value}
-          </h3>
-          {subtitle ? (
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {subtitle}
-            </p>
-          ) : null}
-        </div>
-        <div className="p-3 rounded-xl bg-primary-50 dark:bg-gray-800 text-primary-600">
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Row({ label, value }) {
-  return (
-    <div className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
-      <span className="text-gray-500 dark:text-gray-400">{label}</span>
-      <span className="text-right text-gray-900 dark:text-gray-100 font-medium break-all">
-        {value}
-      </span>
     </div>
   );
 }

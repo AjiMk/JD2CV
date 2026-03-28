@@ -1,40 +1,44 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import useResumeStore from '@/store/resumeStore'
-import { FiPlus, FiTrash2 } from 'react-icons/fi'
+import { useState } from "react";
+import useResumeStore from "@/store/resumeStore";
+import { FiPlus, FiTrash2 } from "react-icons/fi";
 
 export default function CertificationsForm() {
-  const { certifications, addCertification, removeCertification } = useResumeStore()
+  const { certifications, addCertification, removeCertification } =
+    useResumeStore();
   const [formData, setFormData] = useState({
-    name: '',
-    issuer: '',
-    date: '',
-    credentialId: '',
-  })
+    name: "",
+    issuer: "",
+    date: "",
+    credentialId: "",
+  });
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
-    })
-  }
+    });
+  };
+
+  const inputClassName =
+    "w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500";
 
   const handleAdd = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (formData.name && formData.issuer) {
       addCertification({
         ...formData,
         id: Date.now(),
-      })
+      });
       setFormData({
-        name: '',
-        issuer: '',
-        date: '',
-        credentialId: '',
-      })
+        name: "",
+        issuer: "",
+        date: "",
+        credentialId: "",
+      });
     }
-  }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -44,8 +48,8 @@ export default function CertificationsForm() {
       {certifications.length > 0 && (
         <div className="space-y-3 mb-6">
           {certifications.map((cert, index) => (
-            <div 
-              key={cert.id} 
+            <div
+              key={cert.id}
               className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
             >
               <div className="flex-1">
@@ -68,9 +72,12 @@ export default function CertificationsForm() {
       )}
 
       {/* Add Form */}
-      <form onSubmit={handleAdd} className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+      <form
+        onSubmit={handleAdd}
+        className="border-2 border-dashed border-gray-300 rounded-lg p-6"
+      >
         <h3 className="font-semibold text-gray-900 mb-4">Add Certification</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -81,8 +88,10 @@ export default function CertificationsForm() {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="AWS Certified Solutions Architect"
+              minLength={2}
+              maxLength={120}
               required
             />
           </div>
@@ -96,8 +105,10 @@ export default function CertificationsForm() {
               name="issuer"
               value={formData.issuer}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="Amazon Web Services"
+              minLength={2}
+              maxLength={120}
               required
             />
           </div>
@@ -111,8 +122,11 @@ export default function CertificationsForm() {
               name="date"
               value={formData.date}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="Jan 2024"
+              maxLength={30}
+              pattern="^[A-Za-z0-9\s,./-]+$"
+              title="Use a short date format such as Jan 2024."
             />
           </div>
 
@@ -125,8 +139,9 @@ export default function CertificationsForm() {
               name="credentialId"
               value={formData.credentialId}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="ABC123XYZ"
+              maxLength={80}
             />
           </div>
         </div>
@@ -140,5 +155,5 @@ export default function CertificationsForm() {
         </button>
       </form>
     </div>
-  )
+  );
 }

@@ -1,68 +1,72 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import useResumeStore from '@/store/resumeStore'
-import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX } from 'react-icons/fi'
+import { useState } from "react";
+import useResumeStore from "@/store/resumeStore";
+import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
 export default function EducationForm() {
-  const { education, addEducation, updateEducation, removeEducation } = useResumeStore()
-  const [editing, setEditing] = useState(null)
+  const { education, addEducation, updateEducation, removeEducation } =
+    useResumeStore();
+  const [editing, setEditing] = useState(null);
   const [formData, setFormData] = useState({
-    institution: '',
-    degree: '',
-    field: '',
-    startDate: '',
-    endDate: '',
-    gpa: '',
-    location: '',
-    achievements: '',
-  })
+    institution: "",
+    degree: "",
+    field: "",
+    startDate: "",
+    endDate: "",
+    gpa: "",
+    location: "",
+    achievements: "",
+  });
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
-    })
-  }
+    });
+  };
+
+  const inputClassName =
+    "w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500";
 
   const handleAdd = () => {
     if (formData.institution && formData.degree) {
       addEducation({
         ...formData,
         id: Date.now(),
-      })
-      resetForm()
+      });
+      resetForm();
     }
-  }
+  };
 
   const handleUpdate = (index) => {
-    updateEducation(index, formData)
-    setEditing(null)
-    resetForm()
-  }
+    updateEducation(index, formData);
+    setEditing(null);
+    resetForm();
+  };
 
   const handleEdit = (index, edu) => {
-    setEditing(index)
-    setFormData(edu)
-  }
+    setEditing(index);
+    setFormData(edu);
+  };
 
   const handleCancel = () => {
-    setEditing(null)
-    resetForm()
-  }
+    setEditing(null);
+    resetForm();
+  };
 
   const resetForm = () => {
     setFormData({
-      institution: '',
-      degree: '',
-      field: '',
-      startDate: '',
-      endDate: '',
-      gpa: '',
-      location: '',
-      achievements: '',
-    })
-  }
+      institution: "",
+      degree: "",
+      field: "",
+      startDate: "",
+      endDate: "",
+      gpa: "",
+      location: "",
+      achievements: "",
+    });
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -75,14 +79,18 @@ export default function EducationForm() {
             <div key={edu.id} className="border border-gray-200 rounded-lg p-4">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{edu.degree} in {edu.field}</h3>
+                  <h3 className="font-semibold text-gray-900">
+                    {edu.degree} in {edu.field}
+                  </h3>
                   <p className="text-gray-700">{edu.institution}</p>
                   <p className="text-sm text-gray-600">
                     {edu.startDate} - {edu.endDate} | {edu.location}
                     {edu.gpa && ` | GPA: ${edu.gpa}`}
                   </p>
                   {edu.achievements && (
-                    <p className="text-sm text-gray-600 mt-2">{edu.achievements}</p>
+                    <p className="text-sm text-gray-600 mt-2">
+                      {edu.achievements}
+                    </p>
                   )}
                 </div>
                 <div className="flex gap-2 ml-4">
@@ -108,9 +116,9 @@ export default function EducationForm() {
       {/* Add/Edit Form */}
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
         <h3 className="font-semibold text-gray-900 mb-4">
-          {editing !== null ? 'Edit Education' : 'Add Education'}
+          {editing !== null ? "Edit Education" : "Add Education"}
         </h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -121,8 +129,11 @@ export default function EducationForm() {
               name="institution"
               value={formData.institution}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="University Name"
+              minLength={2}
+              maxLength={120}
+              required
             />
           </div>
 
@@ -135,8 +146,11 @@ export default function EducationForm() {
               name="degree"
               value={formData.degree}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="Bachelor of Science"
+              minLength={2}
+              maxLength={120}
+              required
             />
           </div>
 
@@ -149,8 +163,10 @@ export default function EducationForm() {
               name="field"
               value={formData.field}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="Computer Science"
+              minLength={2}
+              maxLength={120}
             />
           </div>
 
@@ -163,8 +179,11 @@ export default function EducationForm() {
               name="startDate"
               value={formData.startDate}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="Sep 2018"
+              maxLength={30}
+              pattern="^[A-Za-z0-9\s,./-]+$"
+              title="Use a short date format such as Sep 2018."
             />
           </div>
 
@@ -177,8 +196,11 @@ export default function EducationForm() {
               name="endDate"
               value={formData.endDate}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="May 2022 or Expected May 2024"
+              maxLength={40}
+              pattern="^[A-Za-z0-9\s,./-]+$"
+              title="Use a short date format such as May 2022."
             />
           </div>
 
@@ -191,8 +213,12 @@ export default function EducationForm() {
               name="gpa"
               value={formData.gpa}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="3.8/4.0"
+              inputMode="decimal"
+              maxLength={10}
+              pattern="^[0-9](\.[0-9]{1,2})?(/[0-9](\.[0-9]{1,2})?)?$"
+              title="Enter GPA like 3.8 or 3.8/4.0."
             />
           </div>
 
@@ -205,8 +231,9 @@ export default function EducationForm() {
               name="location"
               value={formData.location}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="City, State"
+              maxLength={80}
             />
           </div>
 
@@ -219,8 +246,9 @@ export default function EducationForm() {
               value={formData.achievements}
               onChange={handleChange}
               rows="3"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={inputClassName}
               placeholder="Dean's List, Honors, relevant coursework, etc."
+              maxLength={500}
             />
           </div>
         </div>
@@ -255,5 +283,5 @@ export default function EducationForm() {
         </div>
       </div>
     </div>
-  )
+  );
 }
