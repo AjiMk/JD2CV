@@ -1,6 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
-const { countries } = require("./seed-data");
+const { countries, skills } = require("./seed-data");
 
 const connectionString = process.env.DATABASE_URL;
 const adapter = connectionString
@@ -41,7 +41,20 @@ async function main() {
     }
   }
 
-  console.log(`Seeded ${countries.length} countries and their states`);
+  for (const skill of skills) {
+    await prisma.skill.upsert({
+      where: { name: skill.name },
+      update: { category: skill.category },
+      create: {
+        name: skill.name,
+        category: skill.category,
+      },
+    });
+  }
+
+  console.log(
+    `Seeded ${countries.length} countries, their states, and ${skills.length} skills`,
+  );
 }
 
 main()

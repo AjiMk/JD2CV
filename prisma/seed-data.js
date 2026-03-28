@@ -43,4 +43,32 @@ const countries = [
   },
 ];
 
-module.exports = { countries };
+const skills = [
+  { name: "JavaScript", category: "technical" },
+  { name: "TypeScript", category: "technical" },
+  { name: "React", category: "technical" },
+  { name: "Next.js", category: "technical" },
+  { name: "Node.js", category: "technical" },
+  { name: "Python", category: "technical" },
+  { name: "Java", category: "technical" },
+  { name: "SQL", category: "technical" },
+  { name: "PostgreSQL", category: "technical" },
+  { name: "MongoDB", category: "technical" },
+  { name: "Docker", category: "technical" },
+  { name: "Kubernetes", category: "technical" },
+  { name: "AWS", category: "technical" },
+  { name: "CI/CD", category: "technical" },
+  { name: "Git", category: "technical" },
+  { name: "Leadership", category: "soft" },
+  { name: "Communication", category: "soft" },
+  { name: "Team Collaboration", category: "soft" },
+  { name: "Problem Solving", category: "soft" },
+  { name: "Critical Thinking", category: "soft" },
+  { name: "Time Management", category: "soft" },
+  { name: "Adaptability", category: "soft" },
+  { name: "Creativity", category: "soft" },
+  { name: "Project Management", category: "soft" },
+  { name: "Mentoring", category: "soft" },
+];
+
+module.exports = { countries, skills };
