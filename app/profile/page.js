@@ -661,7 +661,7 @@ export default function ProfilePage() {
                     className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
                   >
                     <FiEdit3 className="h-4 w-4" />
-                    {saving ? "Saving..." : "Save and continue"}
+                    {saving ? "Saving..." : "Next"}
                     <FiArrowRight className="h-4 w-4" />
                   </button>
                 </div>
