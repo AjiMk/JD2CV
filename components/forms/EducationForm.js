@@ -1,17 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useResumeStore from "@/store/resumeStore";
 import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX } from "react-icons/fi";
+
+const degreeOptions = [
+  "High School Diploma",
+  "Associate Degree",
+  "Bachelor's Degree",
+  "Master's Degree",
+  "MBA",
+  "PhD",
+  "Diploma",
+  "Certificate",
+  "Professional Certification",
+  "Other",
+];
+
+const fieldOptions = [
+  "Computer Science",
+  "Information Technology",
+  "Software Engineering",
+  "Data Science",
+  "Artificial Intelligence",
+  "Business Administration",
+  "Finance",
+  "Marketing",
+  "Electrical Engineering",
+  "Mechanical Engineering",
+  "Civil Engineering",
+  "Biotechnology",
+  "Mathematics",
+  "Physics",
+  "Chemistry",
+  "Other",
+];
 
 export default function EducationForm() {
   const { education, addEducation, updateEducation, removeEducation } =
     useResumeStore();
   const [editing, setEditing] = useState(null);
+  const [syncState, setSyncState] = useState("");
+  const [syncError, setSyncError] = useState("");
   const [formData, setFormData] = useState({
     institution: "",
     degree: "",
+    customDegree: "",
     field: "",
+    customField: "",
     startDate: "",
     endDate: "",
     gpa: "",
@@ -19,35 +55,144 @@ export default function EducationForm() {
     achievements: "",
   });
 
+  useEffect(() => {
+    loadEducation();
+  }, []);
+
+  const loadEducation = async () => {
+    try {
+      const response = await fetch("/api/education", { cache: "no-store" });
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (Array.isArray(data.education)) {
+        const mappedEducation = data.education.map((entry) => ({
+          ...entry,
+          id: entry.id,
+        }));
+        useResumeStore.setState({ education: mappedEducation });
+      }
+    } catch {
+      // Keep local state if fetch fails.
+    }
+  };
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
+      ...(name === "degree" && value !== "Other" ? { customDegree: "" } : {}),
+      ...(name === "field" && value !== "Other" ? { customField: "" } : {}),
     });
   };
 
   const inputClassName =
     "w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500";
 
-  const handleAdd = () => {
-    if (formData.institution && formData.degree) {
-      addEducation({
-        ...formData,
-        id: Date.now(),
-      });
-      resetForm();
+  const syncEducation = async (nextEducation) => {
+    const response = await fetch("/api/education", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ education: nextEducation }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || "Unable to save education");
     }
   };
 
-  const handleUpdate = (index) => {
-    updateEducation(index, formData);
+  const handleAdd = async () => {
+    const degreeValue =
+      formData.degree === "Other"
+        ? formData.customDegree.trim()
+        : formData.degree;
+    const fieldValue =
+      formData.field === "Other" ? formData.customField.trim() : formData.field;
+
+    if (formData.institution && degreeValue && fieldValue) {
+      setSyncState("Saving education...");
+      setSyncError("");
+      const nextEducation = [
+        ...education,
+        {
+          ...formData,
+          degree: degreeValue,
+          field: fieldValue,
+          id: Date.now(),
+        },
+      ];
+      addEducation({
+        ...formData,
+        degree: degreeValue,
+        field: fieldValue,
+        id: Date.now(),
+      });
+      await syncEducation(nextEducation);
+      await loadEducation();
+      resetForm();
+      setSyncState("Education saved.");
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    try {
+      if (editing !== null) {
+        await handleUpdate(editing);
+        return;
+      }
+
+      await handleAdd();
+    } catch (error) {
+      setSyncState("");
+      setSyncError(error.message || "Unable to save education");
+    }
+  };
+
+  const handleUpdate = async (index) => {
+    setSyncState("Saving education...");
+    setSyncError("");
+    const degreeValue =
+      formData.degree === "Other"
+        ? formData.customDegree.trim()
+        : formData.degree;
+    const fieldValue =
+      formData.field === "Other" ? formData.customField.trim() : formData.field;
+    const nextEducation = education.map((item, i) =>
+      i === index
+        ? {
+            ...formData,
+            degree: degreeValue,
+            field: fieldValue,
+            id: item.id,
+          }
+        : item,
+    );
+    updateEducation(index, {
+      ...formData,
+      degree: degreeValue,
+      field: fieldValue,
+    });
+    await syncEducation(nextEducation);
+    await loadEducation();
     setEditing(null);
     resetForm();
+    setSyncState("Education saved.");
   };
 
   const handleEdit = (index, edu) => {
     setEditing(index);
-    setFormData(edu);
+    setFormData({
+      ...edu,
+      customDegree: degreeOptions.includes(edu.degree) ? "" : edu.degree,
+      customField: fieldOptions.includes(edu.field) ? "" : edu.field,
+      degree: degreeOptions.includes(edu.degree) ? edu.degree : "Other",
+      field: fieldOptions.includes(edu.field) ? edu.field : "Other",
+    });
   };
 
   const handleCancel = () => {
@@ -55,11 +200,23 @@ export default function EducationForm() {
     resetForm();
   };
 
+  const handleRemove = async (index) => {
+    const nextEducation = education.filter((_, i) => i !== index);
+    setSyncState("Saving education...");
+    setSyncError("");
+    removeEducation(index);
+    await syncEducation(nextEducation);
+    await loadEducation();
+    setSyncState("Education saved.");
+  };
+
   const resetForm = () => {
     setFormData({
       institution: "",
       degree: "",
+      customDegree: "",
       field: "",
+      customField: "",
       startDate: "",
       endDate: "",
       gpa: "",
@@ -95,13 +252,15 @@ export default function EducationForm() {
                 </div>
                 <div className="flex gap-2 ml-4">
                   <button
+                    type="button"
                     onClick={() => handleEdit(index, edu)}
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
                   >
                     <FiEdit2 className="h-5 w-5" />
                   </button>
                   <button
-                    onClick={() => removeEducation(index)}
+                    type="button"
+                    onClick={() => handleRemove(index)}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                   >
                     <FiTrash2 className="h-5 w-5" />
@@ -114,7 +273,10 @@ export default function EducationForm() {
       )}
 
       {/* Add/Edit Form */}
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+      <form
+        onSubmit={handleSubmit}
+        className="border-2 border-dashed border-gray-300 rounded-lg p-6"
+      >
         <h3 className="font-semibold text-gray-900 mb-4">
           {editing !== null ? "Edit Education" : "Add Education"}
         </h3>
@@ -141,33 +303,64 @@ export default function EducationForm() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Degree *
             </label>
-            <input
-              type="text"
+            <select
               name="degree"
               value={formData.degree}
               onChange={handleChange}
               className={inputClassName}
-              placeholder="Bachelor of Science"
-              minLength={2}
-              maxLength={120}
               required
-            />
+            >
+              <option value="">Select degree</option>
+              {degreeOptions.map((degree) => (
+                <option key={degree} value={degree}>
+                  {degree}
+                </option>
+              ))}
+            </select>
+            {formData.degree === "Other" && (
+              <input
+                type="text"
+                name="customDegree"
+                value={formData.customDegree}
+                onChange={handleChange}
+                className={`${inputClassName} mt-3`}
+                placeholder="Enter degree"
+                maxLength={120}
+                required
+              />
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Field of Study *
             </label>
-            <input
-              type="text"
+            <select
               name="field"
               value={formData.field}
               onChange={handleChange}
               className={inputClassName}
-              placeholder="Computer Science"
-              minLength={2}
-              maxLength={120}
-            />
+              required
+            >
+              <option value="">Select field</option>
+              {fieldOptions.map((field) => (
+                <option key={field} value={field}>
+                  {field}
+                </option>
+              ))}
+            </select>
+            {formData.field === "Other" && (
+              <input
+                type="text"
+                name="customField"
+                value={formData.customField}
+                onChange={handleChange}
+                className={`${inputClassName} mt-3`}
+                placeholder="Enter field of study"
+                maxLength={120}
+                required
+              />
+            )}
           </div>
 
           <div>
@@ -175,15 +368,11 @@ export default function EducationForm() {
               Start Date
             </label>
             <input
-              type="text"
+              type="date"
               name="startDate"
               value={formData.startDate}
               onChange={handleChange}
               className={inputClassName}
-              placeholder="Sep 2018"
-              maxLength={30}
-              pattern="^[A-Za-z0-9\s,./-]+$"
-              title="Use a short date format such as Sep 2018."
             />
           </div>
 
@@ -192,15 +381,11 @@ export default function EducationForm() {
               End Date
             </label>
             <input
-              type="text"
+              type="date"
               name="endDate"
               value={formData.endDate}
               onChange={handleChange}
               className={inputClassName}
-              placeholder="May 2022 or Expected May 2024"
-              maxLength={40}
-              pattern="^[A-Za-z0-9\s,./-]+$"
-              title="Use a short date format such as May 2022."
             />
           </div>
 
@@ -257,13 +442,14 @@ export default function EducationForm() {
           {editing !== null ? (
             <>
               <button
-                onClick={() => handleUpdate(editing)}
+                type="submit"
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
                 <FiCheck className="h-5 w-5" />
                 Update
               </button>
               <button
+                type="button"
                 onClick={handleCancel}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
               >
@@ -272,16 +458,33 @@ export default function EducationForm() {
               </button>
             </>
           ) : (
-            <button
-              onClick={handleAdd}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-            >
-              <FiPlus className="h-5 w-5" />
-              Add Education
-            </button>
+            <>
+              <button
+                type="submit"
+                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              >
+                <FiCheck className="h-5 w-5" />
+                Save
+              </button>
+              <button
+                type="submit"
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                <FiPlus className="h-5 w-5" />
+                Add Education
+              </button>
+            </>
           )}
         </div>
-      </div>
+
+        {(syncState || syncError) && (
+          <p
+            className={`mt-4 text-sm ${syncError ? "text-red-600" : "text-green-600"}`}
+          >
+            {syncError || syncState}
+          </p>
+        )}
+      </form>
     </div>
   );
 }
