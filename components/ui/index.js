@@ -38,6 +38,7 @@ export {
   CommandItem,
 } from "./command";
 export { Separator } from "./separator";
+export { ScrollArea, ScrollBar } from "./scroll-area";
 export {
   Popover,
   PopoverTrigger,
