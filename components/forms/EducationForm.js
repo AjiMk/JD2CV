@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Button from "@/components/ui/Button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import useResumeStore from "@/store/resumeStore";
 import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
@@ -88,7 +96,7 @@ export default function EducationForm() {
   };
 
   const inputClassName =
-    "w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500";
+    "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
   const syncEducation = async (nextEducation) => {
     const response = await fetch("/api/education", {
@@ -226,20 +234,20 @@ export default function EducationForm() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Education</h2>
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-2xl font-bold text-foreground mb-6">Education</h2>
 
       {/* Education List */}
       {education.length > 0 && (
         <div className="space-y-4 mb-6">
           {education.map((edu, index) => (
-            <div key={edu.id} className="border border-gray-200 rounded-lg p-4">
+            <div key={edu.id} className="rounded-lg border border-border p-4">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-foreground">
                     {edu.degree} in {edu.field}
                   </h3>
-                  <p className="text-gray-700">{edu.institution}</p>
+                  <p className="text-muted-foreground">{edu.institution}</p>
                   <p className="text-sm text-gray-600">
                     {edu.startDate} - {edu.endDate} | {edu.location}
                     {edu.gpa && ` | GPA: ${edu.gpa}`}
@@ -251,20 +259,20 @@ export default function EducationForm() {
                   )}
                 </div>
                 <div className="flex gap-2 ml-4">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => handleEdit(index, edu)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                    className="rounded-lg p-2 text-foreground hover:bg-secondary/80"
                   >
                     <FiEdit2 className="h-5 w-5" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => handleRemove(index)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    className="rounded-lg p-2 text-destructive hover:bg-destructive/10"
                   >
                     <FiTrash2 className="h-5 w-5" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -275,15 +283,15 @@ export default function EducationForm() {
       {/* Add/Edit Form */}
       <form
         onSubmit={handleSubmit}
-        className="border-2 border-dashed border-gray-300 rounded-lg p-6"
+        className="rounded-lg border-2 border-dashed border-input bg-background p-6"
       >
-        <h3 className="font-semibold text-gray-900 mb-4">
+        <h3 className="font-semibold text-foreground mb-4">
           {editing !== null ? "Edit Education" : "Add Education"}
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Institution *
             </label>
             <input
@@ -300,23 +308,26 @@ export default function EducationForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Degree *
             </label>
-            <select
-              name="degree"
+            <Select
               value={formData.degree}
-              onChange={handleChange}
-              className={inputClassName}
-              required
+              onValueChange={(value) =>
+                handleChange({ target: { name: "degree", value } })
+              }
             >
-              <option value="">Select degree</option>
-              {degreeOptions.map((degree) => (
-                <option key={degree} value={degree}>
-                  {degree}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className={inputClassName}>
+                <SelectValue placeholder="Select degree" />
+              </SelectTrigger>
+              <SelectContent>
+                {degreeOptions.map((degree) => (
+                  <SelectItem key={degree} value={degree}>
+                    {degree}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {formData.degree === "Other" && (
               <input
                 type="text"
@@ -332,23 +343,26 @@ export default function EducationForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Field of Study *
             </label>
-            <select
-              name="field"
+            <Select
               value={formData.field}
-              onChange={handleChange}
-              className={inputClassName}
-              required
+              onValueChange={(value) =>
+                handleChange({ target: { name: "field", value } })
+              }
             >
-              <option value="">Select field</option>
-              {fieldOptions.map((field) => (
-                <option key={field} value={field}>
-                  {field}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className={inputClassName}>
+                <SelectValue placeholder="Select field" />
+              </SelectTrigger>
+              <SelectContent>
+                {fieldOptions.map((field) => (
+                  <SelectItem key={field} value={field}>
+                    {field}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {formData.field === "Other" && (
               <input
                 type="text"
@@ -364,7 +378,7 @@ export default function EducationForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Start Date
             </label>
             <input
@@ -377,7 +391,7 @@ export default function EducationForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               End Date
             </label>
             <input
@@ -390,7 +404,7 @@ export default function EducationForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               GPA
             </label>
             <input
@@ -408,7 +422,7 @@ export default function EducationForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Location
             </label>
             <input
@@ -423,7 +437,7 @@ export default function EducationForm() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Achievements / Relevant Coursework
             </label>
             <textarea
@@ -441,38 +455,38 @@ export default function EducationForm() {
         <div className="flex gap-3 mt-4">
           {editing !== null ? (
             <>
-              <button
+              <Button
                 type="submit"
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-secondary-foreground hover:bg-secondary/80"
               >
                 <FiCheck className="h-5 w-5" />
                 Update
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleCancel}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-secondary-foreground hover:bg-secondary/80"
               >
                 <FiX className="h-5 w-5" />
                 Cancel
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button
+              <Button
                 type="submit"
-                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
               >
                 <FiCheck className="h-5 w-5" />
                 Save
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2 px-4 py-2 border border-input text-muted-foreground rounded-lg hover:bg-secondary/80"
               >
                 <FiPlus className="h-5 w-5" />
                 Add Education
-              </button>
+              </Button>
             </>
           )}
         </div>

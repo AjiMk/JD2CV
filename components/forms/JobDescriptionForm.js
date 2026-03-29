@@ -5,16 +5,18 @@ import useResumeStore from "@/store/resumeStore";
 export default function JobDescriptionForm() {
   const { jobDescription, setJobDescription } = useResumeStore();
   const inputClassName =
-    "w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500";
+    "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Job Description</h2>
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-2xl font-bold text-foreground mb-6">
+        Job Description
+      </h2>
 
       <div>
         <label
           htmlFor="jobDescription"
-          className="block text-sm font-medium text-gray-700 mb-2"
+          className="block text-sm font-medium text-muted-foreground mb-2"
         >
           Paste the job description you&apos;re applying for *
         </label>
@@ -29,17 +31,17 @@ export default function JobDescriptionForm() {
           maxLength={5000}
           required
         />
-        <p className="text-sm text-gray-600 mt-2">
+        <p className="mt-2 text-sm text-muted-foreground">
           Pro tip: Include the full job description including requirements,
           responsibilities, and preferred qualifications for best results.
         </p>
       </div>
 
-      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h3 className="font-semibold text-blue-900 mb-2">
+      <div className="mt-4 rounded-lg border border-border bg-secondary/20 p-4">
+        <h3 className="mb-2 font-semibold text-foreground">
           Why provide a job description?
         </h3>
-        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+        <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
           <li>Helps tailor your resume to match the specific role</li>
           <li>Improves ATS (Applicant Tracking System) compatibility</li>
           <li>Highlights relevant skills and experience</li>

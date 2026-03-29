@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Button from "@/components/ui/Button";
 import useResumeStore from "@/store/resumeStore";
 import { FiPlus, FiX } from "react-icons/fi";
 
@@ -12,7 +13,7 @@ export default function SkillsForm() {
   const [saveState, setSaveState] = useState("");
   const [saveError, setSaveError] = useState("");
   const inputClassName =
-    "flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500";
+    "flex-1 rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
   useEffect(() => {
     const loadSkills = async () => {
@@ -127,32 +128,34 @@ export default function SkillsForm() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Skills</h2>
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-2xl font-bold text-foreground mb-6">Skills</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <h3 className="font-semibold text-gray-900 mb-3">Technical Skills</h3>
+          <h3 className="font-semibold text-foreground mb-3">
+            Technical Skills
+          </h3>
 
-          <div className="flex flex-wrap gap-2 mb-4 min-h-[60px] p-3 border border-gray-200 rounded-lg">
+          <div className="mb-4 flex min-h-[60px] flex-wrap gap-2 rounded-lg border border-border p-3">
             {skills.technical.length === 0 ? (
-              <p className="text-gray-400 text-sm">
+              <p className="text-sm text-muted-foreground">
                 No technical skills added yet
               </p>
             ) : (
               skills.technical.map((skill, index) => (
                 <span
                   key={`${skill}-${index}`}
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground"
                 >
                   {skill}
-                  <button
+                  <Button
                     type="button"
                     onClick={() => handleRemoveSkill("technical", index)}
-                    className="hover:text-blue-900"
+                    className="hover:text-foreground"
                   >
                     <FiX className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </span>
               ))
             )}
@@ -170,40 +173,42 @@ export default function SkillsForm() {
               pattern="^[A-Za-z0-9][A-Za-z0-9\s.+#/ -]*$"
               title="Use a short skill name with letters, numbers, and common symbols only."
             />
-            <button
+            <Button
               type="submit"
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
             >
               <FiPlus className="h-5 w-5" />
               Add
-            </button>
+            </Button>
           </form>
 
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="mt-2 text-xs text-muted-foreground">
             Add programming languages, frameworks, tools, and technologies
           </p>
         </div>
 
         <div>
-          <h3 className="font-semibold text-gray-900 mb-3">Soft Skills</h3>
+          <h3 className="font-semibold text-foreground mb-3">Soft Skills</h3>
 
-          <div className="flex flex-wrap gap-2 mb-4 min-h-[60px] p-3 border border-gray-200 rounded-lg">
+          <div className="mb-4 flex min-h-[60px] flex-wrap gap-2 rounded-lg border border-border p-3">
             {skills.soft.length === 0 ? (
-              <p className="text-gray-400 text-sm">No soft skills added yet</p>
+              <p className="text-sm text-muted-foreground">
+                No soft skills added yet
+              </p>
             ) : (
               skills.soft.map((skill, index) => (
                 <span
                   key={`${skill}-${index}`}
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
+                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground"
                 >
                   {skill}
-                  <button
+                  <Button
                     type="button"
                     onClick={() => handleRemoveSkill("soft", index)}
-                    className="hover:text-green-900"
+                    className="hover:text-foreground"
                   >
                     <FiX className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </span>
               ))
             )}
@@ -221,51 +226,51 @@ export default function SkillsForm() {
               pattern="^[A-Za-z][A-Za-z\s&-]*$"
               title="Use letters, spaces, ampersands, and hyphens only."
             />
-            <button
+            <Button
               type="submit"
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
             >
               <FiPlus className="h-5 w-5" />
               Add
-            </button>
+            </Button>
           </form>
 
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="mt-2 text-xs text-muted-foreground">
             Add interpersonal and professional skills
           </p>
         </div>
       </div>
 
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <h3 className="font-semibold text-gray-900 mb-3">
+      <div className="mt-6 border-t border-border pt-6">
+        <h3 className="font-semibold text-foreground mb-3">
           Suggested Technical Skills
         </h3>
         <div className="flex flex-wrap gap-2">
           {suggestions.technical.map((skill) => (
-            <button
+            <Button
               key={skill.id}
               type="button"
               onClick={() => handleSuggestionClick("technical", skill.name)}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
+              className="rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground transition-colors hover:bg-secondary/80"
             >
               + {skill.name}
-            </button>
+            </Button>
           ))}
         </div>
 
-        <h3 className="font-semibold text-gray-900 mb-3 mt-4">
+        <h3 className="font-semibold text-foreground mb-3 mt-4">
           Suggested Soft Skills
         </h3>
         <div className="flex flex-wrap gap-2">
           {suggestions.soft.map((skill) => (
-            <button
+            <Button
               key={skill.id}
               type="button"
               onClick={() => handleSuggestionClick("soft", skill.name)}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
+              className="rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground transition-colors hover:bg-secondary/80"
             >
               + {skill.name}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

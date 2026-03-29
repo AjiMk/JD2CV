@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Button from "@/components/ui/Button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import useResumeStore from "@/store/resumeStore";
 import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 
@@ -58,7 +66,7 @@ export default function WorkExperienceForm() {
   });
 
   const inputClassName =
-    "w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500";
+    "w-full rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
   useEffect(() => {
     const loadCountries = async () => {
@@ -317,19 +325,21 @@ export default function WorkExperienceForm() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Work Experience</h2>
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-2xl font-bold text-foreground mb-6">
+        Work Experience
+      </h2>
 
       {workExperience.length > 0 && (
         <div className="space-y-4 mb-6">
           {workExperience.map((exp, index) => (
-            <div key={exp.id} className="border border-gray-200 rounded-lg p-4">
+            <div key={exp.id} className="rounded-lg border border-border p-4">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-foreground">
                     {exp.position}
                   </h3>
-                  <p className="text-gray-700">{exp.company}</p>
+                  <p className="text-muted-foreground">{exp.company}</p>
                   <p className="text-sm text-gray-600">
                     {exp.startDate} - {exp.current ? "Present" : exp.endDate}
                   </p>
@@ -344,27 +354,27 @@ export default function WorkExperienceForm() {
                   </p>
                   {exp.achievements && (
                     <div className="mt-2">
-                      <p className="text-sm text-gray-700 whitespace-pre-line">
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">
                         {exp.achievements}
                       </p>
                     </div>
                   )}
                 </div>
                 <div className="flex gap-2 ml-4">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => handleEdit(index, exp)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                    className="rounded-lg p-2 text-foreground hover:bg-secondary/80"
                   >
                     <FiEdit2 className="h-5 w-5" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => handleRemove(index)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    className="rounded-lg p-2 text-destructive hover:bg-destructive/10"
                   >
                     <FiTrash2 className="h-5 w-5" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -374,15 +384,15 @@ export default function WorkExperienceForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="border-2 border-dashed border-gray-300 rounded-lg p-6"
+        className="rounded-lg border-2 border-dashed border-input bg-background p-6"
       >
-        <h3 className="font-semibold text-gray-900 mb-4">
+        <h3 className="font-semibold text-foreground mb-4">
           {editing !== null ? "Edit Experience" : "Add Work Experience"}
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Company *
             </label>
             <input
@@ -399,23 +409,26 @@ export default function WorkExperienceForm() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Position / Title *
             </label>
-            <select
-              name="position"
+            <Select
               value={formData.position}
-              onChange={handleChange}
-              className={inputClassName}
-              required
+              onValueChange={(value) =>
+                handleChange({ target: { name: "position", value } })
+              }
             >
-              <option value="">Select position</option>
-              {positionOptions.map((position) => (
-                <option key={position} value={position}>
-                  {position}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className={inputClassName}>
+                <SelectValue placeholder="Select position" />
+              </SelectTrigger>
+              <SelectContent>
+                {positionOptions.map((position) => (
+                  <SelectItem key={position} value={position}>
+                    {position}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {formData.position === "Other" && (
               <input
                 type="text"
@@ -431,48 +444,54 @@ export default function WorkExperienceForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Country *
             </label>
-            <select
-              name="countryId"
+            <Select
               value={formData.countryId}
-              onChange={handleChange}
-              className={inputClassName}
-              required
+              onValueChange={(value) =>
+                handleChange({ target: { name: "countryId", value } })
+              }
             >
-              <option value="">Select country</option>
-              {countries.map((country) => (
-                <option key={country.id} value={country.id}>
-                  {country.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className={inputClassName}>
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent>
+                {countries.map((country) => (
+                  <SelectItem key={country.id} value={country.id}>
+                    {country.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               State / Province *
             </label>
-            <select
-              name="stateId"
+            <Select
               value={formData.stateId}
-              onChange={handleChange}
-              className={inputClassName}
+              onValueChange={(value) =>
+                handleChange({ target: { name: "stateId", value } })
+              }
               disabled={!formData.countryId}
-              required
             >
-              <option value="">Select state</option>
-              {states.map((state) => (
-                <option key={state.id} value={state.id}>
-                  {state.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className={inputClassName}>
+                <SelectValue placeholder="Select state" />
+              </SelectTrigger>
+              <SelectContent>
+                {states.map((state) => (
+                  <SelectItem key={state.id} value={state.id}>
+                    {state.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Pincode / Postal Code
             </label>
             <input
@@ -487,7 +506,7 @@ export default function WorkExperienceForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Start Date *
             </label>
             <input
@@ -507,11 +526,11 @@ export default function WorkExperienceForm() {
               name="current"
               checked={formData.current}
               onChange={handleChange}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
             />
             <label
               htmlFor="current"
-              className="text-sm font-medium text-gray-700"
+              className="text-sm font-medium text-muted-foreground"
             >
               I currently work here
             </label>
@@ -519,7 +538,7 @@ export default function WorkExperienceForm() {
 
           {!formData.current && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
                 End Date *
               </label>
               <input
@@ -534,7 +553,7 @@ export default function WorkExperienceForm() {
           )}
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Key Achievements & Responsibilities *
             </label>
             <textarea
@@ -542,11 +561,11 @@ export default function WorkExperienceForm() {
               value={formData.achievements}
               onChange={handleChange}
               rows="6"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               placeholder="• Led development of feature X resulting in 30% efficiency improvement"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="mt-1 text-xs text-muted-foreground">
               Use bullet points (•) to list your achievements. Focus on
               quantifiable results and impact.
             </p>
@@ -556,38 +575,38 @@ export default function WorkExperienceForm() {
         <div className="flex gap-3 mt-4">
           {editing !== null ? (
             <>
-              <button
+              <Button
                 type="submit"
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-secondary-foreground hover:bg-secondary/80"
               >
                 <FiCheck className="h-5 w-5" />
                 Save
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleCancel}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-secondary-foreground hover:bg-secondary/80"
               >
                 <FiX className="h-5 w-5" />
                 Cancel
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button
+              <Button
                 type="submit"
-                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
               >
                 <FiCheck className="h-5 w-5" />
                 Save
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="flex items-center gap-2 px-4 py-2 border border-input text-muted-foreground rounded-lg hover:bg-secondary/80"
               >
                 <FiPlus className="h-5 w-5" />
                 Add Experience
-              </button>
+              </Button>
             </>
           )}
         </div>

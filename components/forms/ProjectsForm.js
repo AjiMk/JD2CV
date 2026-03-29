@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Button from "@/components/ui/Button";
 import useResumeStore from "@/store/resumeStore";
 import {
   FiPlus,
@@ -67,7 +68,7 @@ export default function ProjectsForm() {
   );
 
   const inputClassName =
-    "w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500";
+    "w-full rounded-lg border border-input px-4 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
   const validateForm = () => {
     const errors = [];
@@ -245,28 +246,28 @@ export default function ProjectsForm() {
 
   if (loading) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow-md">
-        <h2 className="mb-4 text-2xl font-bold text-gray-900">Projects</h2>
-        <p className="text-sm text-gray-500">Loading projects...</p>
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="mb-4 text-2xl font-bold text-foreground">Projects</h2>
+        <p className="text-sm text-muted-foreground">Loading projects...</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-md">
-      <h2 className="mb-6 text-2xl font-bold text-gray-900">Projects</h2>
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="mb-6 text-2xl font-bold text-foreground">Projects</h2>
 
       {projects.length > 0 && (
         <div className="mb-6 space-y-4">
           {projects.map((project, index) => (
             <div
               key={project.id || `${project.name}-${index}`}
-              className="rounded-lg border border-gray-200 p-4"
+              className="rounded-lg border border-border p-4"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-foreground">
                       {project.name}
                     </h3>
                     {project.link && (
@@ -274,43 +275,45 @@ export default function ProjectsForm() {
                         href={project.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary-600 hover:text-primary-700"
+                        className="text-primary hover:text-primary/80"
                       >
                         <FiExternalLink className="h-4 w-4" />
                       </a>
                     )}
                   </div>
                   {project.description && (
-                    <p className="mt-1 text-gray-700">{project.description}</p>
+                    <p className="mt-1 text-muted-foreground">
+                      {project.description}
+                    </p>
                   )}
                   {Array.isArray(project.technologies) &&
                     project.technologies.length > 0 && (
-                      <p className="mt-2 text-sm text-gray-600">
+                      <p className="mt-2 text-sm text-muted-foreground">
                         <span className="font-medium">Technologies:</span>{" "}
                         {project.technologies.join(", ")}
                       </p>
                     )}
                   {project.highlights && (
-                    <p className="mt-2 whitespace-pre-line text-sm text-gray-600">
+                    <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
                       {project.highlights}
                     </p>
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => handleEdit(index, project)}
-                    className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"
+                    className="rounded-lg p-2 text-foreground hover:bg-secondary/80"
                   >
                     <FiEdit2 className="h-5 w-5" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => handleRemove(index)}
-                    className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                    className="rounded-lg p-2 text-destructive hover:bg-destructive/10"
                   >
                     <FiTrash2 className="h-5 w-5" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -320,15 +323,15 @@ export default function ProjectsForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="rounded-lg border-2 border-dashed border-gray-300 p-6"
+        className="rounded-lg border-2 border-dashed border-input bg-background p-6"
       >
-        <h3 className="mb-4 font-semibold text-gray-900">
+        <h3 className="mb-4 font-semibold text-foreground">
           {editing !== null ? "Edit Project" : "Add Project"}
         </h3>
 
         <div className="grid grid-cols-1 gap-4">
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-muted-foreground">
               Project Name *
             </label>
             <input
@@ -344,7 +347,7 @@ export default function ProjectsForm() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-muted-foreground">
               Description *
             </label>
             <textarea
@@ -360,7 +363,7 @@ export default function ProjectsForm() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-muted-foreground">
               Project Link (GitHub/Live Demo)
             </label>
             <input
@@ -376,7 +379,7 @@ export default function ProjectsForm() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-muted-foreground">
               Key Highlights & Achievements
             </label>
             <textarea
@@ -393,12 +396,12 @@ export default function ProjectsForm() {
         </div>
 
         <div className="mt-6">
-          <h4 className="mb-3 text-sm font-semibold text-gray-900">
+          <h4 className="mb-3 text-sm font-semibold text-foreground">
             Available Technologies
           </h4>
           <div className="flex flex-wrap gap-2">
             {techSuggestions.length === 0 ? (
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 No technologies found in the skills table.
               </p>
             ) : (
@@ -406,19 +409,19 @@ export default function ProjectsForm() {
                 const selected = formData.technologies.includes(skill.name);
 
                 return (
-                  <button
+                  <Button
                     key={skill.id}
                     type="button"
                     onClick={() => toggleTechnology(skill.name)}
                     className={`rounded-full px-3 py-1 text-sm transition-colors ${
                       selected
-                        ? "bg-primary-600 text-white hover:bg-primary-700"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                     }`}
                   >
                     {selected ? "✓ " : "+ "}
                     {skill.name}
-                  </button>
+                  </Button>
                 );
               })
             )}
@@ -426,35 +429,35 @@ export default function ProjectsForm() {
         </div>
 
         <div className="mt-6 flex gap-3">
-          <button
+          <Button
             type="submit"
             data-action="save"
-            className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 font-medium text-secondary-foreground hover:bg-secondary/80"
           >
             <FiCheck className="h-5 w-5" />
             Save
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             data-action="add"
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-input px-4 py-2 font-medium text-muted-foreground hover:bg-secondary/80"
           >
             <FiPlus className="h-5 w-5" />
             Add Project
-          </button>
+          </Button>
           {editing !== null && (
-            <button
+            <Button
               type="button"
               onClick={() => {
                 resetForm();
                 setFormError("");
                 setSaveState("");
               }}
-              className="inline-flex items-center gap-2 rounded-lg bg-gray-600 px-4 py-2 font-medium text-white hover:bg-gray-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 font-medium text-secondary-foreground hover:bg-secondary/80"
             >
               <FiX className="h-5 w-5" />
               Cancel
-            </button>
+            </Button>
           )}
         </div>
 

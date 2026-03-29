@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 import {
   Briefcase,
   Database,
+  Map,
   LayoutDashboard,
   Activity,
   Settings,
   UserCircle2,
+  FileSearch,
   Users,
   Workflow,
 } from "lucide-react";
@@ -39,7 +41,15 @@ const sidebarSections = [
       { icon: Briefcase, label: "Job Tracker", href: "/job-tracker" },
       { icon: Activity, label: "Activity", href: "/activity" },
       { icon: Workflow, label: "Automations", href: "/automations" },
-      { icon: Database, label: "Resume", href: "/resume" },
+    ],
+  },
+  {
+    title: "Resume",
+    items: [
+      { icon: Database, label: "All resumes", href: "/resume" },
+      { icon: Database, label: "Resume builder", href: "/resume-builder" },
+      { icon: Map, label: "Resume map", href: "/resume-map" },
+      { icon: FileSearch, label: "JD to Resume", href: "/jd-to-resume" },
     ],
   },
   {
@@ -53,8 +63,6 @@ const sidebarSections = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const workflowOpen =
-    pathname.startsWith("/job-tracker") || pathname.startsWith("/resume");
 
   return (
     <Sidebar>
