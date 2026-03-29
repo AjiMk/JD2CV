@@ -385,14 +385,6 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-6">
-            <RecommendedJobs
-              jobs={buildRecommendedJobs(applications)}
-              search={jobSearch}
-              onSearch={setJobSearch}
-              sortKey={jobSort}
-              onSortChange={setJobSort}
-            />
-
             <div className="grid gap-6 xl:grid-cols-12">
               <div className="xl:col-span-4">
                 <ApplicationStagePie
@@ -400,9 +392,6 @@ export default function DashboardPage() {
                   dateFilter={pieDateFilter}
                   onDateFilterChange={setPieDateFilter}
                 />
-              </div>
-              <div className="xl:col-span-4">
-                <AtsInsights score={avgAtsScore} />
               </div>
               <div className="xl:col-span-4">
                 <SkillGapAnalysis />
@@ -413,24 +402,16 @@ export default function DashboardPage() {
                   onToggle={() => setAutomationEnabled((v) => !v)}
                 />
               </div>
-
-              <div className="xl:col-span-12">
-                <RecentActivity />
-              </div>
             </div>
+
+            <RecommendedJobs
+              jobs={buildRecommendedJobs(applications)}
+              search={jobSearch}
+              onSearch={setJobSearch}
+              sortKey={jobSort}
+              onSortChange={setJobSort}
+            />
           </div>
-
-          <FilteredApplications
-            query={query}
-            setQuery={setQuery}
-            stage={stage}
-            setStage={setStage}
-            tab={tab}
-            setTab={setTab}
-            rows={filtered.slice(0, 8)}
-          />
-
-          <NextActions actions={buildNextActions(applications)} />
         </div>
       </SidebarInset>
     </SidebarProvider>
@@ -686,38 +667,6 @@ function RecommendedJobs({
   );
 }
 
-function NextActions({ actions }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Next Actions</CardTitle>
-        <CardDescription>
-          Priority tasks that need attention today
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {actions.map((action) => (
-          <div
-            key={action.label}
-            className="flex items-start justify-between gap-3 rounded-xl border border-border bg-secondary/30 p-4"
-          >
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <action.icon className="h-4 w-4 text-muted-foreground" />
-                <p className="font-medium">{action.label}</p>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {action.description}
-              </p>
-            </div>
-            <Button variant="outline">{action.action}</Button>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
 function ApplicationStagePie({ applications, dateFilter, onDateFilterChange }) {
   const filteredApplications = applications.filter((item) => {
     if (dateFilter === "all") return true;
@@ -810,9 +759,9 @@ function ApplicationStagePie({ applications, dateFilter, onDateFilterChange }) {
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <CardTitle>Application Distribution</CardTitle>
+            <CardTitle>Job Tracker</CardTitle>
             <CardDescription>
-              Applied, rejected, shortlisted, and interviewed jobs
+              Overview of job stage distribution
             </CardDescription>
           </div>
           <Select value={dateFilter} onValueChange={onDateFilterChange}>
@@ -910,67 +859,6 @@ function ApplicationStagePie({ applications, dateFilter, onDateFilterChange }) {
   );
 }
 
-function AtsInsights({ score }) {
-  const keywords = ["Kubernetes", "TypeScript", "CI/CD"];
-  const suggestions = [
-    "Add ATS-focused keywords near your headline and summary.",
-    "Mirror the role description in your skills and experience bullets.",
-    "Keep one tailored resume variant per role family.",
-  ];
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>ATS Insights</CardTitle>
-        <CardDescription>
-          Score, missing keywords, and suggestions
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="flex items-center gap-4">
-          <div
-            className="relative flex h-24 w-24 items-center justify-center rounded-full"
-            style={{
-              backgroundImage: `conic-gradient(currentColor ${score * 3.6}deg, rgba(255,255,255,0.08) 0deg)`,
-            }}
-          >
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-background text-lg font-semibold">
-              {score}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="text-3xl font-semibold">{score}%</div>
-            <p className="text-sm text-muted-foreground">
-              Average ATS score across your current pipeline
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {keywords.map((keyword) => (
-            <Badge
-              key={keyword}
-              variant="outline"
-              className="border-border bg-background text-xs"
-            >
-              {keyword}
-            </Badge>
-          ))}
-        </div>
-        <div className="rounded-xl border border-border bg-secondary/30 p-4">
-          <h4 className="mb-3 text-sm font-medium">Resume suggestions</h4>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            {suggestions.map((item) => (
-              <li key={item} className="flex gap-2">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function SkillGapAnalysis() {
   const skills = [
     { name: "System Design", demand: 18, match: 62, priority: "High" },
@@ -986,34 +874,36 @@ function SkillGapAnalysis() {
           Priority skills to close based on demand frequency
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2">
         {skills.map((skill) => (
           <div
             key={skill.name}
-            className="space-y-2 rounded-xl border border-border bg-secondary/20 p-4"
+            className="space-y-1.5 rounded-lg border border-border bg-secondary/15 px-3 py-2"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="font-medium">{skill.name}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-sm font-medium leading-none">
+                  {skill.name}
+                </div>
+                <div className="mt-1 text-[11px] text-muted-foreground">
                   {skill.demand} jobs mention this
                 </div>
               </div>
               <Badge
                 variant="outline"
-                className="border-border bg-background text-xs"
+                className="border-border bg-background px-2 py-0 text-[10px]"
               >
                 {skill.priority}
               </Badge>
             </div>
             <div className="space-y-1">
-              <div className="flex justify-between text-xs text-muted-foreground">
+              <div className="flex justify-between text-[11px] text-muted-foreground">
                 <span>Match</span>
                 <span>{skill.match}%</span>
               </div>
-              <div className="h-2 rounded-full bg-muted">
+              <div className="h-1.5 rounded-full bg-muted">
                 <div
-                  className="h-2 rounded-full bg-primary"
+                  className="h-1.5 rounded-full bg-primary"
                   style={{ width: `${skill.match}%` }}
                 />
               </div>
@@ -1079,167 +969,6 @@ function AutomationStatus({ enabled, onToggle }) {
               {log}
             </div>
           ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function RecentActivity() {
-  const feed = [
-    {
-      title: "Application submitted",
-      description: "A new application was created from the dashboard flow.",
-      tag: "Application",
-      timestamp: "10m ago",
-    },
-    {
-      title: "Resume generated",
-      description: "A resume variant was generated for a high-match role.",
-      tag: "Resume",
-      timestamp: "1h ago",
-    },
-    {
-      title: "Match found",
-      description:
-        "A role with visa sponsorship and strong ATS fit was detected.",
-      tag: "Match",
-      timestamp: "3h ago",
-    },
-  ];
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
-        <CardDescription>
-          Latest applications, resumes, and matches
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {feed.map((item) => (
-          <div
-            key={item.title}
-            className="rounded-xl border border-border bg-secondary/20 p-4"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1">
-                <div className="font-medium">{item.title}</div>
-                <div className="text-sm text-muted-foreground">
-                  {item.description}
-                </div>
-              </div>
-              <Badge
-                variant="outline"
-                className="border-border bg-background text-xs"
-              >
-                {item.tag}
-              </Badge>
-            </div>
-            <div className="mt-3 text-xs text-muted-foreground">
-              {item.timestamp}
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function FilteredApplications({
-  query,
-  setQuery,
-  stage,
-  setStage,
-  tab,
-  setTab,
-  rows,
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <CardTitle>Filtered Applications</CardTitle>
-            <CardDescription>
-              Applications, interviews, and offers in a tabbed table
-            </CardDescription>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search company, role, location"
-                className="w-full pl-9 sm:w-64"
-              />
-            </div>
-            <Select value={stage} onValueChange={setStage}>
-              <SelectTrigger className="w-full sm:w-44">
-                <SelectValue placeholder="All stages" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All stages</SelectItem>
-                {stages.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {item}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={tab} onValueChange={setTab} className="mb-4">
-          <TabsList>
-            <TabsTrigger value="applications">Applications</TabsTrigger>
-            <TabsTrigger value="interviews">Interviews</TabsTrigger>
-            <TabsTrigger value="offers">Offers</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Company</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Stage</TableHead>
-                <TableHead>Applied</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Notes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => {
-                const company =
-                  row.company?.name || row.manualCompanyName || "Unknown";
-                const location = [row.state?.name, row.country?.name]
-                  .filter(Boolean)
-                  .join(", ");
-                return (
-                  <TableRow key={row.id}>
-                    <TableCell className="font-medium">{company}</TableCell>
-                    <TableCell>{row.role}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="capitalize">
-                        {row.stage}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {row.appliedDate
-                        ? new Date(row.appliedDate).toLocaleDateString()
-                        : "—"}
-                    </TableCell>
-                    <TableCell>{location || "—"}</TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {row.notes || "—"}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
         </div>
       </CardContent>
     </Card>
@@ -1330,36 +1059,6 @@ function buildRecommendedJobs(applications) {
       ? new Date(item.appliedDate).toLocaleDateString()
       : "Today",
   }));
-}
-
-function buildNextActions(applications) {
-  const pending = applications.filter(
-    (item) => item.stage === "applied",
-  ).length;
-  const lowAts = applications.filter((item) => getAtsScore(item) < 60).length;
-  const followUps = applications.filter((item) =>
-    `${item.role || ""}`.toLowerCase().includes("senior"),
-  ).length;
-  return [
-    {
-      icon: Send,
-      label: "Pending applications",
-      description: `${pending} applications still need follow-up or submission`,
-      action: "Review",
-    },
-    {
-      icon: AlertCircle,
-      label: "Low ATS resumes",
-      description: `${lowAts} resumes are below the ATS threshold`,
-      action: "Improve",
-    },
-    {
-      icon: RotateCcw,
-      label: "Follow-ups needed",
-      description: `${followUps} applications need follow-up messages`,
-      action: "Send",
-    },
-  ];
 }
 
 function buildTrendData(applications) {
