@@ -2,31 +2,26 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   AlertCircle,
+  ArrowLeft,
   ArrowUpRight,
+  ArrowRight,
   BarChart3,
   Briefcase,
   CheckCircle2,
-  ChevronRight,
   CircleSlash,
-  Database,
-  Filter,
+  ArrowDownUp,
   Gauge,
-  LayoutDashboard,
+  RotateCcw,
+  Bell,
   Loader2,
-  MapPin,
-  MoreHorizontal,
-  RefreshCw,
   Search,
   Send,
-  Settings,
   Sparkles,
   Target,
   TrendingUp,
-  UserCircle2,
-  Users,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -45,6 +40,12 @@ import {
   CardTitle,
 } from "@/components/ui/Card";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -53,12 +54,6 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/Input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Popover,
   PopoverContent,
@@ -72,6 +67,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -81,41 +77,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import DashboardNavbar from "@/components/DashboardNavbar";
-
-const sidebarSections = [
-  {
-    title: "Overview",
-    items: [
-      {
-        icon: LayoutDashboard,
-        label: "Dashboard",
-        href: "/dashboard",
-        active: true,
-      },
-      { icon: Users, label: "Applications", href: "/job-tracker" },
-    ],
-  },
-  {
-    title: "Workflow",
-    items: [
-      { icon: Briefcase, label: "Job Tracker", href: "/job-tracker" },
-      { icon: Database, label: "Resume", href: "/resume" },
-    ],
-  },
-  {
-    title: "System",
-    items: [
-      { icon: Settings, label: "Settings", href: "/dashboard" },
-      { icon: UserCircle2, label: "Profile", href: "/profile" },
-    ],
-  },
-];
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 const stages = ["shortListed", "applied", "interview", "rejected"];
 
 export default function DashboardPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState([]);
@@ -123,8 +105,13 @@ export default function DashboardPage() {
   const [query, setQuery] = useState("");
   const [stage, setStage] = useState("all");
   const [tab, setTab] = useState("applications");
-  const [environment, setEnvironment] = useState("Production");
   const [automationEnabled, setAutomationEnabled] = useState(true);
+  const unreadNotifications = 3;
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [jobSearch, setJobSearch] = useState("");
+  const [jobSort, setJobSort] = useState("id");
+  const [pieDateFilter, setPieDateFilter] = useState("30d");
 
   useEffect(() => {
     const load = async () => {
@@ -193,6 +180,8 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
+  const breadcrumbPage = getBreadcrumbLabel(pathname);
+
   if (loading || !user) {
     return (
       <div className="dark flex min-h-screen flex-col bg-background text-foreground">
@@ -222,169 +211,196 @@ export default function DashboardPage() {
 
   const stats = [
     {
-      title: "Total Applications",
-      value: total,
-      icon: Briefcase,
-      trend: "+12%",
-    },
-    {
       title: "Shortlisted",
       value: counts.shortListed || 0,
       icon: Target,
-      trend: "Pipeline health",
+      growth: "+8.1%",
     },
     {
       title: "Interviews",
       value: counts.interview || 0,
       icon: BarChart3,
-      trend: `${interviewRate}% rate`,
+      growth: "+6.7%",
     },
     {
       title: "Interview Rate",
       value: `${interviewRate}%`,
       icon: TrendingUp,
-      trend: "wk over wk",
-    },
-    {
-      title: "Avg ATS Score",
-      value: `${avgAtsScore}%`,
-      icon: Gauge,
-      trend: "Target 75+",
+      growth: "+4.9%",
     },
     {
       title: "New Matches (24h)",
       value: newMatches24h,
       icon: Sparkles,
-      trend: "Fresh leads",
+      growth: "+14.8%",
     },
   ];
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground">
-      <DashboardNavbar
-        user={user}
-        onLogout={handleLogout}
-        onToggleTheme={() => document.documentElement.classList.toggle("dark")}
-      />
-      <div className="flex flex-1 overflow-hidden">
-        <aside
-          className={`flex flex-col border-r border-border bg-card transition-all ${collapsed ? "w-16" : "w-60"}`}
-        >
-          <div className="flex-1 overflow-auto py-4">
-            {sidebarSections.map((section) => (
-              <div key={section.title} className="mb-6">
-                {!collapsed && (
-                  <h3 className="mb-2 px-4 text-xs uppercase tracking-wider text-muted-foreground">
-                    {section.title}
-                  </h3>
-                )}
-                <nav className="space-y-1 px-2">
-                  {section.items.map((item) => (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${item.active ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span>{item.label}</span>}
-                    </Link>
-                  ))}
-                </nav>
-              </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{breadcrumbPage}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+          <div className="ml-auto flex items-center gap-2 px-4">
+            <DropdownMenu
+              open={notificationOpen}
+              onOpenChange={setNotificationOpen}
+            >
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="relative rounded-full border border-border bg-card hover:bg-secondary"
+                >
+                  <Bell className="h-4 w-4" />
+                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
+                  {unreadNotifications > 0 ? (
+                    <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                      {unreadNotifications}
+                    </span>
+                  ) : null}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={8}
+                className="z-50 w-80"
+              >
+                <DropdownMenuItem className="cursor-default font-medium focus:bg-transparent">
+                  Notifications
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex flex-col items-start gap-1 py-2">
+                  <span className="mb-1 h-2 w-2 rounded-full bg-primary" />
+                  <span className="font-medium text-foreground">
+                    New match found
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Senior Frontend Engineer • 10m ago
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex flex-col items-start gap-1 py-2">
+                  <span className="mb-1 h-2 w-2 rounded-full bg-primary" />
+                  <span className="font-medium text-foreground">
+                    Resume ATS score improved
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    ATS score increased to 82%
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex flex-col items-start gap-1 py-2 opacity-80">
+                  <span className="mb-1 h-2 w-2 rounded-full bg-muted-foreground/60" />
+                  <span className="font-medium text-foreground">
+                    Follow-up reminder
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    2 follow-ups are due today
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu open={profileOpen} onOpenChange={setProfileOpen}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5 transition-colors hover:bg-secondary"
+                >
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src="/placeholder-user.jpg" />
+                    <AvatarFallback>
+                      {user?.name?.[0] || user?.email?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={8}
+                className="z-50 w-56"
+              >
+                <DropdownMenuItem onSelect={() => router.push("/profile")}>
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => router.push("/resume-builder")}
+                >
+                  Resume Builder
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => router.push("/job-tracker")}>
+                  Job Tracker
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleLogout}>
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <div>
+            <h1 className="text-2xl font-semibold">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              Monitor applications, ATS signals, and automation status.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {stats.map((stat) => (
+              <Card key={stat.title} className="rounded-xl">
+                <CardHeader className="flex flex-row items-start justify-between space-y-0 px-3 pb-1 pt-3">
+                  <div>
+                    <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {stat.title}
+                    </CardTitle>
+                    <div className="mt-1 text-lg font-semibold">
+                      {stat.value}
+                    </div>
+                  </div>
+                  <div className="rounded-full border border-border bg-secondary p-1.5 text-muted-foreground">
+                    <stat.icon className="h-3 w-3" />
+                  </div>
+                </CardHeader>
+                <CardContent className="px-3 pb-3 pt-0">
+                  <div className="text-xs font-medium text-emerald-500">
+                    {stat.growth}
+                  </div>
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    Growth vs last period
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex items-center justify-center border-t border-border py-3 text-muted-foreground hover:text-foreground"
-          >
-            <ChevronRight
-              className={`h-4 w-4 transition-transform ${collapsed ? "" : "rotate-180"}`}
-            />
-          </button>
-        </aside>
 
-        <main className="flex-1 overflow-auto p-6">
           <div className="space-y-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold">Dashboard</h1>
-                <p className="text-sm text-muted-foreground">
-                  Monitor applications, ATS signals, and automation status.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Select value={environment} onValueChange={setEnvironment}>
-                  <SelectTrigger className="w-[145px] bg-secondary">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["Production", "Preview", "Development"].map((item) => (
-                      <SelectItem key={item} value={item}>
-                        {item}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button variant="outline" className="gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                  Refresh
-                </Button>
-                <FilterPopover stage={stage} setStage={setStage} />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Export</DropdownMenuItem>
-                    <DropdownMenuItem>Settings</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {stats.map((stat) => (
-                <Card key={stat.title}>
-                  <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                    <div>
-                      <CardTitle className="text-sm text-muted-foreground">
-                        {stat.title}
-                      </CardTitle>
-                      <div className="mt-2 text-2xl font-semibold">
-                        {stat.value}
-                      </div>
-                    </div>
-                    <stat.icon className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <Badge
-                      variant="outline"
-                      className="border-border bg-secondary text-xs"
-                    >
-                      {stat.trend}
-                    </Badge>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <RecommendedJobs
+              jobs={buildRecommendedJobs(applications)}
+              search={jobSearch}
+              onSearch={setJobSearch}
+              sortKey={jobSort}
+              onSortChange={setJobSort}
+            />
 
             <div className="grid gap-6 xl:grid-cols-12">
-              <div className="xl:col-span-7">
-                <RecommendedJobs jobs={buildRecommendedJobs(applications)} />
+              <div className="xl:col-span-4">
+                <ApplicationStagePie
+                  applications={applications}
+                  dateFilter={pieDateFilter}
+                  onDateFilterChange={setPieDateFilter}
+                />
               </div>
-              <div className="xl:col-span-5">
-                <NextActions actions={buildNextActions(applications)} />
-              </div>
-
-              <div className="xl:col-span-6">
-                <ApplicationPipeline counts={counts} total={total} />
-              </div>
-              <div className="xl:col-span-6">
-                <ApplicationTrend data={buildTrendData(applications)} />
-              </div>
-
               <div className="xl:col-span-4">
                 <AtsInsights score={avgAtsScore} />
               </div>
@@ -402,75 +418,269 @@ export default function DashboardPage() {
                 <RecentActivity />
               </div>
             </div>
-
-            <FilteredApplications
-              query={query}
-              setQuery={setQuery}
-              stage={stage}
-              setStage={setStage}
-              tab={tab}
-              setTab={setTab}
-              rows={filtered.slice(0, 8)}
-            />
           </div>
-        </main>
-      </div>
-    </div>
+
+          <FilteredApplications
+            query={query}
+            setQuery={setQuery}
+            stage={stage}
+            setStage={setStage}
+            tab={tab}
+            setTab={setTab}
+            rows={filtered.slice(0, 8)}
+          />
+
+          <NextActions actions={buildNextActions(applications)} />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
-function RecommendedJobs({ jobs }) {
+function RecommendedJobs({
+  jobs,
+  search,
+  onSearch,
+  sortKey,
+  sortDirection,
+  onSortChange,
+}) {
+  const filteredJobs = jobs
+    .filter((job) => {
+      const haystack = [
+        job.id,
+        job.title,
+        job.organizationName,
+        job.postedAt,
+        job.roleType,
+        job.statusText,
+        ...(job.tags || []),
+        ...(job.missingSkills || []),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(search.toLowerCase());
+    })
+    .sort((a, b) => {
+      const direction = sortDirection === "asc" ? 1 : -1;
+
+      if (sortKey === "matchScore") {
+        return (a.matchScore - b.matchScore) * direction;
+      }
+
+      const aValue = `${a[sortKey] || ""}`.toLowerCase();
+      const bValue = `${b[sortKey] || ""}`.toLowerCase();
+      return aValue.localeCompare(bValue) * direction;
+    })
+    .slice(0, 5);
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recommended Jobs</CardTitle>
-        <CardDescription>
-          High-fit roles from your recent search signal
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {jobs.map((job) => (
-          <div
-            key={`${job.title}-${job.company}`}
-            className="rounded-xl border border-border bg-secondary/30 p-4"
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold">{job.title}</h3>
-                  <Badge variant="secondary">{job.matchScore}% match</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {job.company} • {job.location}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {job.tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="outline"
-                      className="border-border bg-background text-xs"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Missing skills: {job.missingSkills.join(", ")}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="gap-2">
-                  <ArrowUpRight className="h-4 w-4" />
-                  Apply
-                </Button>
-                <Button className="gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  Generate Resume
-                </Button>
-              </div>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <CardTitle>Recommended Jobs</CardTitle>
+            <CardDescription>
+              High-fit roles from your recent search signal
+            </CardDescription>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => onSearch(e.target.value)}
+                placeholder="Search jobs"
+                className="w-full pl-9 sm:w-64"
+              />
             </div>
           </div>
-        ))}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="w-full rounded-lg border border-border">
+          <Table className="w-full table-auto">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-2 py-2">ID</TableHead>
+                <TableHead className="px-2 py-2">
+                  <button
+                    type="button"
+                    onClick={() => onSortChange("title")}
+                    className="flex items-center gap-1"
+                  >
+                    Job Title
+                    {sortKey === "title" ? (
+                      <ArrowDownUp className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : null}
+                  </button>
+                </TableHead>
+                <TableHead className="px-2 py-2">
+                  <button
+                    type="button"
+                    onClick={() => onSortChange("organizationName")}
+                    className="flex items-center gap-1"
+                  >
+                    Organization Name
+                    {sortKey === "organizationName" ? (
+                      <ArrowDownUp className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : null}
+                  </button>
+                </TableHead>
+                <TableHead className="px-2 py-2">
+                  <button
+                    type="button"
+                    onClick={() => onSortChange("matchScore")}
+                    className="flex items-center gap-1"
+                  >
+                    Match
+                    {sortKey === "matchScore" ? (
+                      <ArrowDownUp className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : null}
+                  </button>
+                </TableHead>
+                <TableHead className="px-2 py-2">Missing Skills</TableHead>
+                <TableHead className="px-2 py-2">Tags</TableHead>
+                <TableHead className="px-2 py-2">
+                  <button
+                    type="button"
+                    onClick={() => onSortChange("postedAt")}
+                    className="flex items-center gap-1"
+                  >
+                    Job Posted At
+                    {sortKey === "postedAt" ? (
+                      <ArrowDownUp className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : null}
+                  </button>
+                </TableHead>
+                <TableHead className="px-2 py-2" />
+                <TableHead className="px-2 py-2" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredJobs.map((job) => (
+                <TableRow key={job.id}>
+                  <TableCell className="px-2 py-2 text-xs font-medium">
+                    {job.id}
+                  </TableCell>
+                  <TableCell className="px-2 py-2 text-sm">
+                    <div className="font-medium text-foreground">
+                      {job.title}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {job.roleType}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-2 py-2 text-sm">
+                    <div className="font-medium text-foreground">
+                      {job.organizationName}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {job.statusText}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-2 py-2">
+                    <Badge variant="secondary">{job.matchScore}%</Badge>
+                  </TableCell>
+                  <TableCell className="px-2 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {job.missingSkills.map((skill) => (
+                        <Badge
+                          key={skill}
+                          variant="outline"
+                          className="border-border bg-background px-1.5 py-0.5 text-[10px]"
+                        >
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-2 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {job.tags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="border-border bg-background px-1.5 py-0.5 text-[10px]"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-2 py-2 text-sm text-muted-foreground">
+                    {job.postedAt}
+                  </TableCell>
+                  <TableCell className="px-2 py-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9"
+                      title="Apply"
+                      aria-label="Apply"
+                    >
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                  <TableCell className="px-2 py-2">
+                    <Button
+                      size="icon"
+                      className="h-9 w-9"
+                      title="Generate Resume"
+                      aria-label="Generate Resume"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            Showing up to 5 of {jobs.length} jobs
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              aria-label="Previous page"
+              title="Previous page"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              aria-label="Page 1"
+              title="Page 1"
+            >
+              <span className="text-xs font-medium">1</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              aria-label="Page 2"
+              title="Page 2"
+            >
+              <span className="text-xs font-medium">2</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              aria-label="Next page"
+              title="Next page"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -508,69 +718,192 @@ function NextActions({ actions }) {
   );
 }
 
-function ApplicationPipeline({ counts, total }) {
-  const pipeline = [
-    { label: "Shortlisted", value: counts.shortListed || 0 },
-    { label: "Applied", value: counts.applied || 0 },
-    { label: "Interview", value: counts.interview || 0 },
-    { label: "Rejected", value: counts.rejected || 0 },
+function ApplicationStagePie({ applications, dateFilter, onDateFilterChange }) {
+  const filteredApplications = applications.filter((item) => {
+    if (dateFilter === "all") return true;
+    if (!item.appliedDate) return false;
+
+    const appliedAt = new Date(item.appliedDate).getTime();
+    const cutoff =
+      dateFilter === "7d"
+        ? Date.now() - 7 * 24 * 60 * 60 * 1000
+        : dateFilter === "30d"
+          ? Date.now() - 30 * 24 * 60 * 60 * 1000
+          : Date.now() - 90 * 24 * 60 * 60 * 1000;
+
+    return appliedAt >= cutoff;
+  });
+
+  const counts = {
+    applied: filteredApplications.filter((item) => item.stage === "applied")
+      .length,
+    rejected: filteredApplications.filter((item) => item.stage === "rejected")
+      .length,
+    shortlisted: filteredApplications.filter(
+      (item) => item.stage === "shortListed",
+    ).length,
+    interviewed: filteredApplications.filter(
+      (item) => item.stage === "interview",
+    ).length,
+  };
+
+  const fallbackCounts = {
+    applied: 12,
+    rejected: 6,
+    shortlisted: 8,
+    interviewed: 5,
+  };
+
+  const total =
+    Object.values(counts).reduce((sum, value) => sum + value, 0) || 1;
+  const segments = [
+    {
+      key: "applied",
+      label: "Applied",
+      value: counts.applied || fallbackCounts.applied,
+      color: "#3b82f6",
+    },
+    {
+      key: "rejected",
+      label: "Rejected",
+      value: counts.rejected || fallbackCounts.rejected,
+      color: "#ef4444",
+    },
+    {
+      key: "shortlisted",
+      label: "Shortlisted",
+      value: counts.shortlisted || fallbackCounts.shortlisted,
+      color: "#f59e0b",
+    },
+    {
+      key: "interviewed",
+      label: "Interviewed",
+      value: counts.interviewed || fallbackCounts.interviewed,
+      color: "#22c55e",
+    },
   ];
+
+  const pieTotal =
+    segments.reduce((sum, segment) => sum + segment.value, 0) || 1;
+  const gradient = segments.length
+    ? `conic-gradient(${segments
+        .map((segment, index) => {
+          const start =
+            (segments
+              .slice(0, index)
+              .reduce((sum, current) => sum + current.value, 0) /
+              pieTotal) *
+            100;
+          const end =
+            (segments
+              .slice(0, index + 1)
+              .reduce((sum, current) => sum + current.value, 0) /
+              pieTotal) *
+            100;
+          return `${segment.color} ${start}% ${end}%`;
+        })
+        .join(", ")})`
+    : "conic-gradient(#e5e7eb 0% 100%)";
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Application Pipeline</CardTitle>
-        <CardDescription>
-          Stage distribution across your current funnel
-        </CardDescription>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <CardTitle>Application Distribution</CardTitle>
+            <CardDescription>
+              Applied, rejected, shortlisted, and interviewed jobs
+            </CardDescription>
+          </div>
+          <Select value={dateFilter} onValueChange={onDateFilterChange}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="all">All time</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {pipeline.map((item) => (
-          <div key={item.label} className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{item.label}</span>
-              <span>{item.value}</span>
+        <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-2xl border border-border bg-secondary/20 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Total jobs
+                </p>
+                <p className="text-2xl font-semibold text-foreground">
+                  {pieTotal}
+                </p>
+              </div>
+              <Select value={dateFilter} onValueChange={onDateFilterChange}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7d">Last 7 days</SelectItem>
+                  <SelectItem value="30d">Last 30 days</SelectItem>
+                  <SelectItem value="90d">Last 90 days</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="h-3 overflow-hidden rounded-full bg-muted">
+            <div className="mt-6 flex items-center justify-center">
               <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${total ? (item.value / total) * 100 : 0}%` }}
-              />
+                className="relative flex h-40 w-40 items-center justify-center rounded-full border border-border bg-card shadow-sm"
+                style={{ backgroundImage: gradient }}
+              >
+                <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full border border-border bg-background">
+                  <span className="text-2xl font-semibold leading-none">
+                    {pieTotal}
+                  </span>
+                  <span className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Jobs
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
 
-function ApplicationTrend({ data }) {
-  const max = Math.max(...data.map((item) => item.count), 1);
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Application Trend</CardTitle>
-        <CardDescription>
-          Applications per day over the last week
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex h-48 items-end gap-3 rounded-xl border border-border bg-secondary/20 px-4 py-4">
-          {data.map((item) => (
-            <div
-              key={item.label}
-              className="flex flex-1 flex-col items-center gap-2"
-            >
-              <div className="flex h-32 w-full items-end justify-center">
-                <div
-                  className="w-full max-w-10 rounded-t-md bg-primary"
-                  style={{ height: `${(item.count / max) * 100}%` }}
-                />
+          <div className="grid gap-3">
+            {segments.map((segment) => (
+              <div
+                key={segment.key}
+                className="rounded-xl border border-border bg-background p-3"
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className="h-3 w-3 rounded-full"
+                    style={{ backgroundColor: segment.color }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-foreground">
+                      {segment.label}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {Math.round((segment.value / pieTotal) * 100)}% of total
+                    </div>
+                  </div>
+                  <div className="text-lg font-semibold text-foreground">
+                    {segment.value}
+                  </div>
+                </div>
+                <div className="mt-3 h-2 rounded-full bg-muted">
+                  <div
+                    className="h-2 rounded-full"
+                    style={{
+                      width: `${(segment.value / pieTotal) * 100}%`,
+                      backgroundColor: segment.color,
+                    }}
+                  />
+                </div>
               </div>
-              <span className="text-xs text-muted-foreground">
-                {item.label}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -913,42 +1246,6 @@ function FilteredApplications({
   );
 }
 
-function FilterPopover({ stage, setStage }) {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Filter className="h-4 w-4" />
-          Filter
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="end">
-        <Command>
-          <CommandInput placeholder="Filter by stage..." />
-          <CommandList>
-            <CommandEmpty>No stage found.</CommandEmpty>
-            <CommandGroup heading="Stages">
-              <CommandItem onSelect={() => setStage("all")}>
-                All stages
-              </CommandItem>
-              {stages.map((item) => (
-                <CommandItem key={item} onSelect={() => setStage(item)}>
-                  <span className="capitalize">{item}</span>
-                  {stage === item && (
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      Selected
-                    </span>
-                  )}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 function getAtsScore(item) {
   if (typeof item.atsScore === "number") return item.atsScore;
   if (`${item.role || ""}`.toLowerCase().includes("senior")) return 82;
@@ -957,33 +1254,81 @@ function getAtsScore(item) {
 }
 
 function buildRecommendedJobs(applications) {
-  const source = applications.slice(0, 4);
-  if (!source.length)
-    return [
-      {
-        title: "Senior Product Engineer",
-        company: "Nova Labs",
-        location: "Remote",
-        matchScore: 86,
-        tags: ["Visa", "Remote"],
-        missingSkills: ["System design", "TypeScript"],
+  const tagSets = [
+    ["Visa", "Remote"],
+    ["Hybrid", "Frontend"],
+    ["Backend", "Priority"],
+    ["AI", "Remote"],
+    ["Cloud", "Visa"],
+    ["Mobile", "Hybrid"],
+    ["Data", "Priority"],
+    ["Security", "Remote"],
+    ["Platform", "Visa"],
+    ["Full-stack", "Hybrid"],
+  ];
+  const skillSets = [
+    ["System design", "TypeScript"],
+    ["React", "Next.js", "Testing"],
+    ["Node.js", "PostgreSQL"],
+    ["Python", "ML"],
+    ["AWS", "Docker"],
+    ["Kotlin", "Swift"],
+    ["SQL", "Analytics"],
+    ["OAuth", "Security"],
+    ["Microservices", "Kubernetes"],
+    ["GraphQL", "Tailwind"],
+  ];
+  const source = [...applications.slice(0, 10)];
+
+  while (source.length < 10) {
+    source.push({
+      role: `Open Role ${source.length + 1}`,
+      company: {
+        name: [
+          "Nova Labs",
+          "Vertex AI",
+          "Atlas Systems",
+          "BluePeak",
+          "Summit Cloud",
+        ][source.length % 5],
       },
-    ];
+      stage:
+        source.length % 3 === 0
+          ? "applied"
+          : source.length % 3 === 1
+            ? "shortListed"
+            : "interview",
+      notes: "High-fit role based on your current search signal.",
+      appliedDate: new Date(
+        Date.now() - source.length * 86400000,
+      ).toISOString(),
+    });
+  }
+
   return source.map((item, index) => ({
+    id: `RJ-${String(index + 1).padStart(3, "0")}`,
     title: item.role || "Open Role",
-    company: item.company?.name || item.manualCompanyName || "Unknown",
-    location:
-      [item.state?.name, item.country?.name].filter(Boolean).join(", ") ||
-      "Remote",
-    matchScore: Math.max(68, 92 - index * 4),
-    tags: [
-      index % 2 === 0 ? "Visa" : "Remote",
-      item.stage === "interview" ? "Priority" : "Match",
-    ],
-    missingSkills: ["TypeScript", "System design", "ATS keywords"].slice(
-      0,
-      2 + (index % 2),
-    ),
+    description:
+      item.notes || "High-fit role based on your current search signal.",
+    organizationName: item.company?.name || item.manualCompanyName || "Unknown",
+    matchScore: Math.max(68, 92 - index * 2),
+    tags: tagSets[index % tagSets.length],
+    missingSkills: skillSets[index % skillSets.length],
+    roleType:
+      item.stage === "interview"
+        ? "Interview stage"
+        : item.stage === "shortListed"
+          ? "Shortlisted"
+          : "Open role",
+    statusText:
+      item.stage === "interview"
+        ? "Interviewing now"
+        : item.stage === "shortListed"
+          ? "Ready to apply"
+          : "Active role",
+    postedAt: item.appliedDate
+      ? new Date(item.appliedDate).toLocaleDateString()
+      : "Today",
   }));
 }
 
@@ -1009,7 +1354,7 @@ function buildNextActions(applications) {
       action: "Improve",
     },
     {
-      icon: RefreshCw,
+      icon: RotateCcw,
       label: "Follow-ups needed",
       description: `${followUps} applications need follow-up messages`,
       action: "Send",
@@ -1024,4 +1369,18 @@ function buildTrendData(applications) {
     count:
       applications.filter((_, i) => i % 7 === index).length || (index % 3) + 1,
   }));
+}
+
+function getBreadcrumbLabel(pathname) {
+  const map = {
+    "/dashboard": "Dashboard",
+    "/job-tracker": "Job Tracker",
+    "/resume": "Resume",
+    "/resume-builder": "Resume Builder",
+    "/profile": "Profile",
+    "/login": "Login",
+    "/register": "Register",
+  };
+
+  return map[pathname] || "Dashboard";
 }

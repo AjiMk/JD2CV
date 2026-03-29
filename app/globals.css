@@ -56,3 +56,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+[data-sidebar-collapsed="true"] .sidebar-labels {
+  display: none;
+}
+
+[data-sidebar-collapsed="true"] .app-sidebar-link {
+  justify-content: center;
+  gap: 0;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+[data-sidebar-collapsed="true"] .app-sidebar-link:hover {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
