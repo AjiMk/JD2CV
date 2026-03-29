@@ -25,7 +25,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/Card";
-import { Textarea } from "@/components/ui/Textarea";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
