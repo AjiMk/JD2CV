@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Button from "@/components/ui/Button";
 import useResumeStore from "@/store/resumeStore";
 import { FiPlus, FiTrash2, FiCheck, FiX } from "react-icons/fi";
 
@@ -45,7 +46,7 @@ export default function CertificationsForm() {
   }, [setCertifications]);
 
   const inputClassName =
-    "w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500";
+    "w-full rounded-lg border border-input px-4 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
   const validateForm = () => {
     const errors = [];
@@ -194,49 +195,53 @@ export default function CertificationsForm() {
 
   if (loading) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow-md">
-        <h2 className="mb-6 text-2xl font-bold text-gray-900">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="mb-6 text-2xl font-bold text-foreground">
           Certifications
         </h2>
-        <p className="text-sm text-gray-500">Loading certifications...</p>
+        <p className="text-sm text-muted-foreground">
+          Loading certifications...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-md">
-      <h2 className="mb-6 text-2xl font-bold text-gray-900">Certifications</h2>
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="mb-6 text-2xl font-bold text-foreground">
+        Certifications
+      </h2>
 
       {certifications.length > 0 && (
         <div className="mb-6 space-y-3">
           {certifications.map((cert, index) => (
             <div
               key={cert.id || `${cert.name}-${index}`}
-              className="flex items-start justify-between rounded-lg border border-gray-200 p-4 transition-colors hover:border-primary-300"
+              className="flex items-start justify-between rounded-lg border border-border p-4 transition-colors hover:bg-secondary/50"
             >
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">{cert.name}</h3>
-                <p className="text-gray-700">{cert.issuer}</p>
-                <div className="mt-1 flex gap-4 text-sm text-gray-600">
+                <h3 className="font-semibold text-foreground">{cert.name}</h3>
+                <p className="text-muted-foreground">{cert.issuer}</p>
+                <div className="mt-1 flex gap-4 text-sm text-muted-foreground">
                   {cert.date && <span>{cert.date}</span>}
                   {cert.credentialId && <span>ID: {cert.credentialId}</span>}
                 </div>
               </div>
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => handleEdit(index, cert)}
-                  className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"
+                  className="rounded-lg p-2 text-foreground hover:bg-secondary/80"
                 >
                   <FiCheck className="h-5 w-5" />
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => handleRemove(index)}
-                  className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                  className="rounded-lg p-2 text-destructive hover:bg-destructive/10"
                 >
                   <FiTrash2 className="h-5 w-5" />
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -245,15 +250,15 @@ export default function CertificationsForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="rounded-lg border-2 border-dashed border-gray-300 p-6"
+        className="rounded-lg border-2 border-dashed border-input bg-background p-6"
       >
-        <h3 className="mb-4 font-semibold text-gray-900">
+        <h3 className="mb-4 font-semibold text-foreground">
           {editing !== null ? "Edit Certification" : "Add Certification"}
         </h3>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-muted-foreground">
               Certification Name *
             </label>
             <input
@@ -269,7 +274,7 @@ export default function CertificationsForm() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-muted-foreground">
               Issuing Organization *
             </label>
             <input
@@ -285,7 +290,7 @@ export default function CertificationsForm() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-muted-foreground">
               Issue Date
             </label>
             <input
@@ -301,7 +306,7 @@ export default function CertificationsForm() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-medium text-muted-foreground">
               Credential ID
             </label>
             <input
@@ -318,35 +323,35 @@ export default function CertificationsForm() {
         </div>
 
         <div className="mt-6 flex gap-3">
-          <button
+          <Button
             type="submit"
             data-action="save"
-            className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 font-medium text-secondary-foreground hover:bg-secondary/80"
           >
             <FiCheck className="h-5 w-5" />
             Save
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             data-action="add"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 font-medium text-white hover:bg-primary-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90"
           >
             <FiPlus className="h-5 w-5" />
             Add Certification
-          </button>
+          </Button>
           {editing !== null && (
-            <button
+            <Button
               type="button"
               onClick={() => {
                 resetForm();
                 setFormError("");
                 setSaveState("");
               }}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-input px-4 py-2 font-medium text-muted-foreground hover:bg-secondary/80"
             >
               <FiX className="h-5 w-5" />
               Cancel
-            </button>
+            </Button>
           )}
         </div>
 
