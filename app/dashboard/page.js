@@ -1,32 +1,121 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  FiBarChart2,
-  FiBriefcase,
-  FiCheckCircle,
-  FiChevronLeft,
-  FiChevronRight,
-  FiFilter,
-  FiPieChart,
-  FiSearch,
-  FiTarget,
-} from "react-icons/fi";
-import UserAvatar from "@/components/UserAvatar";
+  BarChart3,
+  Briefcase,
+  ChevronRight,
+  Database,
+  Filter,
+  LayoutDashboard,
+  Search,
+  Settings,
+  Target,
+  TrendingUp,
+  UserCircle2,
+  Users,
+  MoreHorizontal,
+  ChevronsUpDown,
+} from "lucide-react";
 
-const stageLabels = ["shortListed", "applied", "interview", "rejected"];
+import { Badge } from "@/components/ui/badge";
+import Button from "@/components/ui/Button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import DashboardNavbar from "@/components/DashboardNavbar";
+
+const sidebarSections = [
+  {
+    title: "Overview",
+    items: [
+      {
+        icon: LayoutDashboard,
+        label: "Dashboard",
+        active: true,
+        href: "/dashboard",
+      },
+      { icon: Users, label: "Applications", href: "/job-tracker" },
+    ],
+  },
+  {
+    title: "Workflow",
+    items: [
+      { icon: Briefcase, label: "Job Tracker", href: "/job-tracker" },
+      { icon: Database, label: "Resume", href: "/resume" },
+    ],
+  },
+  {
+    title: "System",
+    items: [
+      { icon: Settings, label: "Settings", href: "/dashboard" },
+      { icon: UserCircle2, label: "Profile", href: "/profile" },
+    ],
+  },
+];
+
+const stages = ["shortListed", "applied", "interview", "rejected"];
+const environmentOptions = ["Production", "Preview", "Development"];
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState([]);
+  const [collapsed, setCollapsed] = useState(false);
   const [query, setQuery] = useState("");
   const [stage, setStage] = useState("all");
-  const [page, setPage] = useState(1);
-  const pageSize = 6;
-
+  const [environment, setEnvironment] = useState("Production");
   useEffect(() => {
     const load = async () => {
       try {
@@ -52,7 +141,7 @@ export default function DashboardPage() {
     load();
   }, [router]);
 
-  const visibleApplications = useMemo(() => {
+  const filteredApplications = useMemo(() => {
     return applications.filter((item) => {
       const company = item.company?.name || item.manualCompanyName || "Unknown";
       const location = [item.state?.name, item.country?.name]
@@ -66,27 +155,18 @@ export default function DashboardPage() {
     });
   }, [applications, query, stage]);
 
-  const pageCount = Math.max(
-    1,
-    Math.ceil(visibleApplications.length / pageSize),
-  );
-  const rows = visibleApplications.slice(
-    (page - 1) * pageSize,
-    page * pageSize,
-  );
-
-  const counts = stageLabels.reduce(
-    (acc, key) => ({
-      ...acc,
-      [key]: applications.filter((a) => a.stage === key).length,
-    }),
-    {},
-  );
-
   const total = applications.length;
+  const counts = Object.fromEntries(
+    stages.map((item) => [
+      item,
+      applications.filter((a) => a.stage === item).length,
+    ]),
+  );
   const interviewRate = total
     ? Math.round((counts.interview / total) * 100)
     : 0;
+
+  const rows = filteredApplications.slice(0, 5);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -95,255 +175,415 @@ export default function DashboardPage() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+      <div className="dark flex min-h-screen flex-col bg-background text-foreground">
+        <DashboardHeaderSkeleton />
+        <div className="flex flex-1 overflow-hidden">
+          <DashboardSidebarSkeleton />
+          <main className="flex-1 overflow-auto p-6">
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-72" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-10 w-36" />
+                <Skeleton className="h-10 w-28" />
+                <Skeleton className="h-10 w-10" />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Card key={index}>
+                  <CardHeader className="space-y-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-8 w-20" />
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-slate-900">
-      <header className="border-b bg-white/90 dark:bg-gray-900/90 backdrop-blur sticky top-0 z-10 border-gray-200 dark:border-gray-800">
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Welcome back
-            </p>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              {user.name || user.email}
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <UserAvatar user={user} onLogout={handleLogout} />
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <StatCard
-            title="Total Applications"
-            value={total}
-            icon={FiBriefcase}
-          />
-          <StatCard
-            title="Short Listed"
-            value={counts.shortListed || 0}
-            icon={FiCheckCircle}
-          />
-          <StatCard
-            title="Interviews"
-            value={counts.interview || 0}
-            icon={FiTarget}
-          />
-          <StatCard
-            title="Interview Rate"
-            value={`${interviewRate}%`}
-            icon={FiBarChart2}
-          />
-        </section>
-
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 lg:col-span-2">
-            <div className="flex items-center justify-between mb-5">
+    <div className="flex h-screen flex-col bg-background text-foreground">
+      <DashboardNavbar
+        user={user}
+        onLogout={handleLogout}
+        onToggleTheme={() => document.documentElement.classList.toggle("dark")}
+      />
+      <div className="flex flex-1 overflow-hidden">
+        <DashboardSidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+        <main className="flex-1 overflow-auto">
+          <div className="p-6">
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                  Application Funnel
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Stage distribution across your job search
+                <h1 className="text-2xl font-semibold text-foreground">
+                  Dashboard
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Monitor your applications, funnel health, and active search.
                 </p>
               </div>
-              <FiPieChart className="h-5 w-5 text-primary-600" />
-            </div>
-            <div className="space-y-4">
-              {stageLabels.map((label) => (
-                <div key={label}>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700 dark:text-gray-300 capitalize">
-                      {label}
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400">
-                      {counts[label] || 0}
-                    </span>
-                  </div>
-                  <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-primary-500 to-cyan-500 rounded-full"
-                      style={{
-                        width: `${total ? ((counts[label] || 0) / total) * 100 : 0}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Stage Snapshot
-            </h2>
-            <div className="space-y-3">
-              {stageLabels.map((label) => (
-                <div
-                  key={label}
-                  className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800"
-                >
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
-                    {label}
-                  </span>
-                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                    {counts[label] || 0}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                Filtered Applications
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Paginated records for the current search
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setPage(1);
-                  }}
-                  className="pl-10 pr-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm w-full sm:w-64 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                  placeholder="Search company, role, location"
-                />
-              </div>
-              <div className="relative">
-                <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <select
-                  value={stage}
-                  onChange={(e) => {
-                    setStage(e.target.value);
-                    setPage(1);
-                  }}
-                  className="pl-10 pr-8 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="all">All stages</option>
-                  {stageLabels.map((label) => (
-                    <option key={label} value={label}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex items-center gap-2">
+                <Select value={environment} onValueChange={setEnvironment}>
+                  <SelectTrigger className="w-[140px] bg-secondary">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {environmentOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" className="gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="hidden sm:inline">Last 30 days</span>
+                </Button>
+                <StageFilterPopover stage={stage} setStage={setStage} />
+                <Button variant="outline" size="icon">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
-                  <th className="py-3 pr-4">Company</th>
-                  <th className="py-3 pr-4">Role</th>
-                  <th className="py-3 pr-4">Stage</th>
-                  <th className="py-3 pr-4">Applied</th>
-                  <th className="py-3 pr-4">Location</th>
-                  <th className="py-3 pr-4">Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => {
-                  const company =
-                    row.company?.name || row.manualCompanyName || "Unknown";
-                  const location = [row.state?.name, row.country?.name]
-                    .filter(Boolean)
-                    .join(", ");
-                  return (
-                    <tr
-                      key={row.id}
-                      className="border-b border-gray-100 dark:border-gray-800 last:border-0"
-                    >
-                      <td className="py-4 pr-4 font-medium text-gray-900 dark:text-gray-100">
-                        {company}
-                      </td>
-                      <td className="py-4 pr-4 text-gray-700 dark:text-gray-300">
-                        {row.role}
-                      </td>
-                      <td className="py-4 pr-4">
-                        <span className="px-2.5 py-1 rounded-full bg-primary-50 dark:bg-gray-800 text-primary-700 dark:text-primary-300 capitalize">
-                          {row.stage}
+            <StatsCards
+              total={total}
+              counts={counts}
+              interviewRate={interviewRate}
+            />
+
+            <Accordion
+              type="multiple"
+              defaultValue={["funnel", "snapshot"]}
+              className="mt-6 grid gap-6 lg:grid-cols-2"
+            >
+              <AccordionItem value="funnel" className="rounded-2xl border px-4">
+                <AccordionTrigger className="py-4 no-underline hover:no-underline">
+                  <div className="text-left">
+                    <div className="text-base font-semibold">
+                      Application Funnel
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Stage distribution across your job search
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <Card className="border-0 shadow-none">
+                    <CardContent className="space-y-5 px-2 pb-2 pt-1 sm:px-4">
+                      {stages.map((label) => (
+                        <div key={label} className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="capitalize text-muted-foreground">
+                              {label}
+                            </span>
+                            <span className="text-foreground">
+                              {counts[label] || 0}
+                            </span>
+                          </div>
+                          <div className="h-3 overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="h-full rounded-full bg-primary"
+                              style={{
+                                width: `${total ? ((counts[label] || 0) / total) * 100 : 0}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem
+                value="snapshot"
+                className="rounded-2xl border px-4"
+              >
+                <AccordionTrigger className="py-4 no-underline hover:no-underline">
+                  <div className="text-left">
+                    <div className="text-base font-semibold">
+                      Stage Snapshot
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Quick view of application status
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-3">
+                    {stages.map((label) => (
+                      <div
+                        key={label}
+                        className="flex items-center justify-between rounded-xl border bg-secondary/40 px-4 py-3"
+                      >
+                        <span className="text-sm capitalize text-muted-foreground">
+                          {label}
                         </span>
-                      </td>
-                      <td className="py-4 pr-4 text-gray-600 dark:text-gray-400">
-                        {row.appliedDate
-                          ? new Date(row.appliedDate).toLocaleDateString()
-                          : "—"}
-                      </td>
-                      <td className="py-4 pr-4 text-gray-600 dark:text-gray-400">
-                        {location || "—"}
-                      </td>
-                      <td className="py-4 pr-4 text-gray-600 dark:text-gray-400 max-w-xs">
-                        {row.notes || "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        <Badge variant="secondary">{counts[label] || 0}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
-          <div className="flex items-center justify-between mt-5">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {rows.length} of {visibleApplications.length} filtered
-              results
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="p-2 border rounded-lg disabled:opacity-40 border-gray-200 dark:border-gray-700"
-              >
-                <FiChevronLeft />
-              </button>
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                Page {page} of {pageCount}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-                disabled={page === pageCount}
-                className="p-2 border rounded-lg disabled:opacity-40 border-gray-200 dark:border-gray-700"
-              >
-                <FiChevronRight />
-              </button>
+            <div className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <CardTitle className="text-base">
+                        Filtered Applications
+                      </CardTitle>
+                      <CardDescription>
+                        Paginated records for the current search
+                      </CardDescription>
+                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={query}
+                          onChange={(e) => setQuery(e.target.value)}
+                          placeholder="Search company, role, location"
+                          className="w-full pl-9 sm:w-64"
+                        />
+                      </div>
+                      <Select value={stage} onValueChange={setStage}>
+                        <SelectTrigger className="w-full sm:w-44">
+                          <SelectValue placeholder="All stages" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All stages</SelectItem>
+                          {stages.map((label) => (
+                            <SelectItem key={label} value={label}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="applications" className="mb-4">
+                    <TabsList>
+                      <TabsTrigger value="applications">
+                        Applications
+                      </TabsTrigger>
+                      <TabsTrigger value="interviews">Interviews</TabsTrigger>
+                      <TabsTrigger value="offers">Offers</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Company</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Stage</TableHead>
+                          <TableHead>Applied</TableHead>
+                          <TableHead>Location</TableHead>
+                          <TableHead>Notes</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rows.map((row) => {
+                          const company =
+                            row.company?.name ||
+                            row.manualCompanyName ||
+                            "Unknown";
+                          const location = [row.state?.name, row.country?.name]
+                            .filter(Boolean)
+                            .join(", ");
+                          return (
+                            <TableRow key={row.id}>
+                              <TableCell className="font-medium">
+                                {company}
+                              </TableCell>
+                              <TableCell>{row.role}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="secondary"
+                                  className="capitalize"
+                                >
+                                  {row.stage}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {row.appliedDate
+                                  ? new Date(
+                                      row.appliedDate,
+                                    ).toLocaleDateString()
+                                  : "—"}
+                              </TableCell>
+                              <TableCell>{location || "—"}</TableCell>
+                              <TableCell className="max-w-xs truncate">
+                                {row.notes || "—"}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
-        </section>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
 
-function StatCard({ title, value, icon: Icon }) {
+function DashboardSidebar({ collapsed, setCollapsed }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
-          <h3 className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {value}
-          </h3>
-        </div>
-        <div className="p-3 rounded-xl bg-primary-50 dark:bg-gray-800 text-primary-600">
-          <Icon className="h-5 w-5" />
+    <aside
+      className={`flex flex-col border-r border-border bg-card transition-all duration-200 ${collapsed ? "w-16" : "w-60"}`}
+    >
+      <div className="flex-1 overflow-auto py-4">
+        {sidebarSections.map((section) => (
+          <div key={section.title} className="mb-6">
+            {!collapsed && (
+              <h3 className="mb-2 px-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {section.title}
+              </h3>
+            )}
+            <nav className="space-y-1 px-2">
+              {section.items.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                    item.active
+                      ? "bg-secondary text-foreground"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {!collapsed && (
+                    <span className="flex-1 text-left">{item.label}</span>
+                  )}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="flex items-center justify-center border-t border-border py-3 text-muted-foreground hover:text-foreground"
+      >
+        <ChevronRight
+          className={`h-4 w-4 transition-transform ${collapsed ? "" : "rotate-180"}`}
+        />
+      </button>
+    </aside>
+  );
+}
+
+function StageFilterPopover({ stage, setStage }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="gap-2">
+          <Filter className="h-4 w-4" />
+          <span className="hidden sm:inline">Filter</span>
+          <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0" align="end">
+        <Command>
+          <CommandInput placeholder="Filter by stage..." />
+          <CommandList>
+            <CommandEmpty>No stage found.</CommandEmpty>
+            <CommandGroup heading="Stages">
+              <CommandItem onSelect={() => setStage("all")}>
+                All stages
+              </CommandItem>
+              {stages.map((label) => (
+                <CommandItem key={label} onSelect={() => setStage(label)}>
+                  <span className="capitalize">{label}</span>
+                  {stage === label && (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      Selected
+                    </span>
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function DashboardHeaderSkeleton() {
+  return (
+    <header className="flex items-center justify-between border-b border-border bg-card px-6 py-3">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-9 w-24" />
+        <Skeleton className="hidden h-8 w-56 md:block" />
+      </div>
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-10 w-10" />
+        <Skeleton className="h-10 w-10" />
+        <Skeleton className="h-10 w-10 rounded-full" />
+      </div>
+    </header>
+  );
+}
+
+function DashboardSidebarSkeleton() {
+  return (
+    <aside className="hidden w-60 flex-col border-r border-border bg-background p-4 lg:flex">
+      <Skeleton className="mb-6 h-10 w-full" />
+      <div className="space-y-6">
+        <Skeleton className="h-5 w-24" />
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-10 w-full" />
+          ))}
         </div>
       </div>
+    </aside>
+  );
+}
+
+function StatsCards({ total, counts, interviewRate }) {
+  const stats = [
+    { title: "Total Applications", value: total, icon: Briefcase },
+    { title: "Short Listed", value: counts.shortListed || 0, icon: Target },
+    { title: "Interviews", value: counts.interview || 0, icon: BarChart3 },
+    { title: "Interview Rate", value: `${interviewRate}%`, icon: TrendingUp },
+  ];
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat) => (
+        <Card key={stat.title}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {stat.title}
+            </CardTitle>
+            <stat.icon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {stat.value}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

@@ -270,16 +270,16 @@ export default function ResumeBuilderPage() {
   }
 
   return (
-    <div className={`min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
-      <nav
-        className={`${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border-b fixed w-full z-10 shadow-sm rounded-b-2xl overflow-hidden`}
-      >
+    <div
+      className={`min-h-screen ${darkMode ? "bg-[#151515] text-white" : "bg-[#151515] text-white"}`}
+    >
+      <nav className="border-b border-white/10 fixed w-full z-10 shadow-sm rounded-b-2xl overflow-hidden bg-[#171717]/90 backdrop-blur">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-14 items-center">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className={`lg:hidden p-2 rounded-md ${darkMode ? "text-gray-400 hover:text-gray-300 hover:bg-gray-700" : "text-gray-400 hover:text-gray-500 hover:bg-gray-100"}`}
+                className="lg:hidden p-2 rounded-md text-white/60 hover:text-white hover:bg-white/10"
               >
                 {sidebarOpen ? (
                   <FiX className="h-5 w-5" />
@@ -289,31 +289,27 @@ export default function ResumeBuilderPage() {
               </button>
               <Link href="/dashboard" className="flex items-center">
                 <FiFileText className="h-7 w-7 text-primary-600" />
-                <span
-                  className={`ml-2 text-xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}
-                >
-                  JD2CV
-                </span>
+                <span className="ml-2 text-xl font-bold text-white">JD2CV</span>
               </Link>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={handleSaveDraft}
                 disabled={saving}
-                className={`flex items-center gap-2 px-3 py-1.5 ${darkMode ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"} text-sm rounded-lg transition-colors disabled:opacity-50`}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white/5 text-white/80 hover:bg-white/10 text-sm rounded-lg transition-colors disabled:opacity-50"
               >
                 <FiSave className="h-4 w-4" />
                 <span>{saving ? "Saving..." : "Save Draft"}</span>
               </button>
               <button
                 onClick={() => setShowPreview(!showPreview)}
-                className={`lg:hidden flex items-center gap-2 px-3 py-1.5 ${darkMode ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"} text-sm rounded-lg transition-colors`}
+                className="lg:hidden flex items-center gap-2 px-3 py-1.5 bg-white/5 text-white/80 hover:bg-white/10 text-sm rounded-lg transition-colors"
               >
                 <FiEye className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setDarkMode(!darkMode)}
-                className={`p-2 rounded-lg ${darkMode ? "bg-gray-700 text-yellow-400 hover:bg-gray-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"} transition-colors`}
+                className="p-2 rounded-lg bg-white/5 text-yellow-400 hover:bg-white/10 transition-colors"
                 title={darkMode ? "Light mode" : "Dark mode"}
               >
                 {darkMode ? (
@@ -331,7 +327,7 @@ export default function ResumeBuilderPage() {
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-20">
         <div className="flex h-[calc(100vh-5rem)] gap-2">
           <aside
-            className={`fixed lg:static inset-y-0 left-0 z-20 w-48 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border-r pt-14 lg:pt-0 transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto rounded-2xl`}
+            className={`fixed lg:static inset-y-0 left-0 z-20 w-48 border-r border-white/10 bg-[#181818] pt-14 lg:pt-0 transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto rounded-2xl`}
           >
             <nav className="px-2 py-2 space-y-1">
               {tabs.map((tab) => {
@@ -343,7 +339,7 @@ export default function ResumeBuilderPage() {
                       setActiveTab(tab.id);
                       setSidebarOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors text-sm ${activeTab === tab.id ? "bg-primary-50 text-primary-700 font-semibold" : darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-50"}`}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors text-sm ${activeTab === tab.id ? "bg-white text-black font-semibold" : "text-white/70 hover:bg-white/5"}`}
                   >
                     <Icon className="h-4 w-4" />
                     {tab.name}
@@ -355,9 +351,7 @@ export default function ResumeBuilderPage() {
             <div
               className={`px-2 py-2 border-t ${darkMode ? "border-gray-700" : "border-gray-200"} mt-2`}
             >
-              <h3
-                className={`text-xs font-semibold ${darkMode ? "text-gray-300" : "text-gray-700"} mb-2 uppercase tracking-wide`}
-              >
+              <h3 className="text-[10px] font-semibold text-white/35 mb-2 uppercase tracking-wide">
                 Builder Progress
               </h3>
               <div className="space-y-1.5 text-xs">

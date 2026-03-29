@@ -4,6 +4,13 @@ const nextConfig = {
   images: {
     domains: ["dwxksaibboammmrjnfxq.supabase.co"],
   },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.cache = false;
+    }
+
+    return config;
+  },
 };
 
 module.exports = nextConfig;

@@ -1,42 +1,42 @@
-export default function Card({ 
-  children, 
-  title, 
-  subtitle,
-  className = '',
-  padding = 'normal',
-  hoverable = false 
-}) {
-  const paddings = {
-    none: '',
-    sm: 'p-4',
-    normal: 'p-6',
-    lg: 'p-8',
-  }
+import { cn } from "@/lib/utils";
 
+function Card({ className, ...props }) {
   return (
-    <div 
-      className={`
-        bg-white rounded-lg shadow-md
-        ${hoverable ? 'hover:shadow-xl transition-shadow duration-300' : ''}
-        ${paddings[padding]}
-        ${className}
-      `}
-    >
-      {(title || subtitle) && (
-        <div className="mb-6">
-          {title && (
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {title}
-            </h2>
-          )}
-          {subtitle && (
-            <p className="text-gray-600">
-              {subtitle}
-            </p>
-          )}
-        </div>
+    <div
+      className={cn(
+        "rounded-xl border bg-card text-card-foreground shadow-sm",
+        className,
       )}
-      {children}
-    </div>
-  )
+      {...props}
+    />
+  );
 }
+function CardHeader({ className, ...props }) {
+  return (
+    <div
+      className={cn("flex flex-col space-y-1.5 p-6", className)}
+      {...props}
+    />
+  );
+}
+function CardTitle({ className, ...props }) {
+  return (
+    <h3
+      className={cn(
+        "text-2xl font-semibold leading-none tracking-tight",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+function CardDescription({ className, ...props }) {
+  return (
+    <p className={cn("text-sm text-muted-foreground", className)} {...props} />
+  );
+}
+function CardContent({ className, ...props }) {
+  return <div className={cn("p-6 pt-0", className)} {...props} />;
+}
+
+export { Card, CardHeader, CardTitle, CardDescription, CardContent };
