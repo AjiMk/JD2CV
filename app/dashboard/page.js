@@ -20,7 +20,7 @@ import {
   ChevronsUpDown,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import {
   Accordion,
@@ -34,7 +34,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from "@/components/ui/card";
+} from "@/components/ui/Card";
 import {
   Command,
   CommandEmpty,
@@ -43,7 +43,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/Input";
 import {
   Popover,
   PopoverContent,

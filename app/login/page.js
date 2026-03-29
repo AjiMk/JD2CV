@@ -12,8 +12,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 
 export default function Login() {
   const router = useRouter();

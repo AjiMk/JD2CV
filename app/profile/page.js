@@ -28,7 +28,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/components/ui/Card";
 import { Separator } from "@/components/ui/separator";
 import useResumeStore from "@/store/resumeStore";
 
