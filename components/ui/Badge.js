@@ -1,34 +1,20 @@
-export default function Badge({ 
-  children, 
-  variant = 'primary', 
-  size = 'md',
-  className = '' 
-}) {
-  const variants = {
-    primary: 'bg-blue-100 text-blue-800',
-    success: 'bg-green-100 text-green-800',
-    warning: 'bg-yellow-100 text-yellow-800',
-    danger: 'bg-red-100 text-red-800',
-    gray: 'bg-gray-100 text-gray-800',
-    purple: 'bg-purple-100 text-purple-800',
-  }
+import { cn } from "@/lib/utils";
 
-  const sizes = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-3 py-1 text-sm',
-    lg: 'px-4 py-1.5 text-base',
-  }
+const badgeVariants = {
+  default: "border-transparent bg-primary text-primary-foreground",
+  secondary: "border-transparent bg-secondary text-secondary-foreground",
+  outline: "text-foreground",
+};
 
+export function Badge({ className, variant = "default", ...props }) {
   return (
-    <span 
-      className={`
-        inline-flex items-center font-medium rounded-full
-        ${variants[variant]}
-        ${sizes[size]}
-        ${className}
-      `}
-    >
-      {children}
-    </span>
-  )
+    <div
+      className={cn(
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
+        badgeVariants[variant],
+        className,
+      )}
+      {...props}
+    />
+  );
 }
