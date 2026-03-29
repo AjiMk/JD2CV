@@ -21,21 +21,33 @@ const buttonSizes = {
   icon: "h-10 w-10",
 };
 
-export default function Button({
-  className,
-  variant = "default",
-  size = "default",
-  ...props
-}) {
-  return (
-    <button
-      className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-        buttonVariants[variant],
-        buttonSizes[size],
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+const Button = React.forwardRef(
+  (
+    {
+      className,
+      variant = "default",
+      size = "default",
+      type = "button",
+      ...props
+    },
+    ref,
+  ) => {
+    return (
+      <button
+        ref={ref}
+        type={type}
+        className={cn(
+          "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+          buttonVariants[variant],
+          buttonSizes[size],
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);
+
+Button.displayName = "Button";
+
+export default Button;
