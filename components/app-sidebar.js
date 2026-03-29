@@ -6,9 +6,11 @@ import {
   Briefcase,
   Database,
   LayoutDashboard,
+  Activity,
   Settings,
   UserCircle2,
   Users,
+  Workflow,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -28,13 +30,15 @@ const sidebarSections = [
     title: "Overview",
     items: [
       { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-      { icon: Users, label: "Applications", href: "/job-tracker" },
+      { icon: Users, label: "Jobs", href: "/jobs" },
     ],
   },
   {
     title: "Workflow",
     items: [
       { icon: Briefcase, label: "Job Tracker", href: "/job-tracker" },
+      { icon: Activity, label: "Activity", href: "/activity" },
+      { icon: Workflow, label: "Automations", href: "/automations" },
       { icon: Database, label: "Resume", href: "/resume" },
     ],
   },
